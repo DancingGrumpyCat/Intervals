@@ -4,9 +4,9 @@ from intervals import Interval
 
 def test_init() -> None:
     x = Interval(0, 5)
-    assert x._start >= x.start
-    assert x._end <= x.end
-    assert x.start <= x.end
+    assert x.apparent_start >= x.actual_start
+    assert x.apparent_end <= x.actual_end
+    assert x.actual_start <= x.actual_end
 
 
 def test_init_fail() -> None:
