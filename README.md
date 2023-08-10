@@ -19,3 +19,13 @@ True
 >>> 0 in x
 False
 ```
+
+## How it replaces `range`
+Instead of
+```python
+>>> [x**2 for x in range(10, 15, 2)]
+```
+you can now write
+```python
+>>>[x**2 for x in Interval(10, 15).step(2)]
+```
