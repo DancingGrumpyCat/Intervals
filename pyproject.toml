@@ -1,0 +1,20 @@
+[tool.poetry]
+name = "intervals"
+version = "0.1.0"
+description = "Python module supporting math intervals as an abstraction and superset of the range function."
+authors = ["DancingGrumpyCat <echo.zimet@gmail.com>"]
+license = "MIT"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.8"
+
+[tool.poetry.group.dev.dependencies]
+black = "^23.7.0"
+ruff = "^0.0.284"
+mypy = "^1.5.0"
+pytest = "^7.4.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
