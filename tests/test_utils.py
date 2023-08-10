@@ -1,5 +1,7 @@
-import pytest
-from intervals import Interval
+from intervals import Interval, clamp
 
-# def test_clamp():
-#     x = Interval(0, 5, include_start=False)
+
+def test_clamp() -> None:
+    x = Interval(0, 5)
+    assert clamp(6, x) == 5
+    assert clamp(-1, x) == 0
