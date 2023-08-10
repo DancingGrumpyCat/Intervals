@@ -134,6 +134,6 @@ class Interval:
     def interval_type(self) -> IntervalType:
         if self.include_start and self.include_end:
             return "closed"
-        elif not (self.include_start or self.include_end):
+        if not (self.include_start or self.include_end):
             return "open"
         return "half-open"
