@@ -27,5 +27,5 @@ Instead of
 ```
 you can now write
 ```python
->>>[x**2 for x in Interval(10, 15).step(2)]
+>>>[x**2 for x in Interval(10, 14).step(2)]
 ```
