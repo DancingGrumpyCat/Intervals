@@ -55,6 +55,14 @@ class Interval:
             yield start
             start += step
 
+    def __invert__(self) -> Interval:
+        return Interval(
+            self.start,
+            self.end,
+            include_start=not self.include_start,
+            include_end=not self.include_end,
+        )
+
     def __add__(self, value: Number) -> Interval:
         """
         Raises each of start and end by a value.
