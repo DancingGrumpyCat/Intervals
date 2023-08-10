@@ -14,4 +14,8 @@ Python module supporting math intervals as an abstraction and superset of the ra
 "half-open"
 >>> x.magnitude
 5
+>>> 4 in x
+True
+>>> 0 in x
+False
 ```
