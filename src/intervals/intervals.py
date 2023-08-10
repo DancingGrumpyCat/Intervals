@@ -49,8 +49,7 @@ class Interval:
     def step(self, step: float, start: float | None = None) -> Iterator[float]:
         if start is None:
             start = self._start
-        while start < self.start:
-            start += step
+        start %= step
         while start <= self.end:
             yield start
             start += step
