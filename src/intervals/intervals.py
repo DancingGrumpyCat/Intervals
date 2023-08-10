@@ -1,7 +1,9 @@
 from __future__ import annotations
-from typing import Literal, Union
-from random import random
-from collections.abc import Iterator
+
+from typing import TYPE_CHECKING, Literal, Union
+
+if TYPE_CHECKING:
+    from collections.abc import Iterator
 
 Number = Union[int, float]
 IntervalType = Literal["closed", "open", "half-open"]
