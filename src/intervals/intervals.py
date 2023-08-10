@@ -24,6 +24,21 @@ class Interval:
     ```py
     x = Interval(0, 5, include_start=True)
     ```
+    ### List of methods
+    - __init__
+    - __str__
+    - __repr__
+    - step
+    - __invert__
+    - __add__
+    - __sub__
+    - __mul__
+    - __truediv__
+    - __floordiv__
+    - from_plus_minus (class method)
+    - magnitude (property)
+    - interval_type (property)
+
     """
 
     epsilon = 1e-15  # TODO: change this out for something like math.nextfloat
@@ -61,7 +76,8 @@ class Interval:
 
     def __repr__(self) -> str:
         s, e = self.apparent_start, self.apparent_end
-        i_s, i_e = self.include_start, self.include_end
+        i_s: bool = self.include_start
+        i_e: bool = self.include_end
         return f"Interval({s}, {e}, {i_s}, {i_e})"
 
     def __contains__(self, value: Number) -> bool:
@@ -130,7 +146,7 @@ class Interval:
 
     @classmethod
     def from_plus_minus(
-        cls, center: Number = 0, pm: Number = 0, s: str | None = None
+        cls, center: Number = 0, plusminus: Number = 0, s: str | None = None
     ) -> Interval:
         """
         ### Description
@@ -144,8 +160,8 @@ class Interval:
         """
         if s is not None:
             s = s.replace(" ", "").replace("/", "").replace("±", "+-")
-            center, pm = (float(x) for x in s.split("+-"))
-        return Interval(start=(center - pm), end=(center + pm))
+            center, plusminus = (float(x) for x in s.split("+-"))
+        return Interval(start=(center - plusminus), end=(center + plusminus))
 
     @property
     def magnitude(self) -> float:
