@@ -2,7 +2,7 @@
 Python module supporting math intervals as an abstraction and superset of the range function.
 
 ## Basic usage examples
-```python3
+```python
 >>> x = Interval(0, 5, include_start=False)
 >>> str(x)
 'Interval(0, 5]'
