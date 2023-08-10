@@ -67,6 +67,8 @@ class Interval:
             self.actual_end = self.apparent_end
 
     def __str__(self) -> str:
+        if self.magnitude == 0:
+            return "∅"
         if self.apparent_start == self.apparent_end:
             return str(self.apparent_start)
         s, e = self.apparent_start, self.apparent_end
