@@ -12,3 +12,9 @@ def test_init() -> None:
 def test_init_fail() -> None:
     with pytest.raises(ValueError):
         _ = Interval(5, 0)
+
+
+def test_step_zero_fail() -> None:
+    with pytest.raises(ValueError):
+        x = Interval(0, 5)
+        print(list(x.step(0)))

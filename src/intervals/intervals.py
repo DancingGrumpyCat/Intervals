@@ -91,6 +91,8 @@ class Interval:
         A generator function that, like Python's default `range`, yields values between
         `start` and `stop`, with step `step`.
         """
+        if step <= 0:
+            raise ValueError("step must be greater than 0")
         if start is None:
             start = self.apparent_start
         start %= step
