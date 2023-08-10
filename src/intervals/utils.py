@@ -4,12 +4,19 @@ from intervals.intervals import Interval, Number
 
 
 def clamp(value: Number, interval: Interval) -> Number:
+    """
+    Clamp value to within interval.
+    """
     return min(interval.actual_end, max(interval.actual_start, value))
 
 
 def rand_uniform(interval: Interval, *, values: int = 1) -> float | list[float]:
+    """
+    Return a random float within interval.
+    """
+
     def f(i: Interval) -> float:
-        return random() * i.magnitude + i.actual_start
+        return random.random() * i.magnitude + i.actual_start
 
     if values == 1:
         return f(interval)
