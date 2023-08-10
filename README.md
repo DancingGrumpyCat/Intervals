@@ -3,15 +3,15 @@ Python module supporting math intervals as an abstraction and superset of the ra
 
 ## Basic usage examples
 ```python3
->>> x = Interval(0, 5, include-start=False)
->>> x
-"Interval(0, 5]"
+>>> x = Interval(0, 5, include_start=False)
+>>> str(x)
+'Interval(0, 5]'
 >>> list(x.step(2, start=-1))
 [1, 3, 5]
 >>> list(x.step(2))
 [2, 4]
 >>> x.interval_type
-"half-open"
+'half-open'
 >>> x.magnitude
 5
 >>> 4 in x
