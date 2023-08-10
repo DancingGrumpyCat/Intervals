@@ -72,7 +72,7 @@ class Interval:
         s, e = self.apparent_start, self.apparent_end
         l_bracket: str = "[" if self.include_start else "("
         r_bracket: str = "]" if self.include_end else ")"
-        return f"Interval<{l_bracket}{s}, {e}{r_bracket}>"
+        return f"{l_bracket}{s}, {e}{r_bracket}"
 
     def __repr__(self) -> str:
         s, e = self.apparent_start, self.apparent_end
