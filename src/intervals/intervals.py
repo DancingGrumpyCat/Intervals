@@ -247,7 +247,7 @@ class Interval:
 
     @classmethod
     def from_plus_minus(
-        cls, center: Number = 0, plusminus: Number = 0, s: str | None = None
+        cls, center: Number = 0, plusminus: Number = 0, *, string: str = ""
     ) -> Interval:
         """
         ### Description
@@ -264,14 +264,16 @@ class Interval:
         # [3.5, 4.5)
         ```
         """
-        if s is not None:
-            s = (
-                s.replace(" ", "")
+        if not (center or plusminus):
+            if string == "":
+                raise ValueError("no values were passed")
+            string = (
+                string.replace(" ", "")
                 .replace("/", "")
                 .replace("±", "+-")
                 .replace("pm", "+-")
             )
-            center, plusminus = (float(x) for x in s.split("+-"))
+            center, plusminus = (float(x) for x in string.split("+-"))
         return Interval(
             lower_bound=(center - plusminus),
             upper_bound=(center + plusminus),
@@ -292,6 +294,16 @@ class Interval:
         if not (self.includes_lower_bound or self.includes_upper_bound):
             return "open"
         return "half-open"
+
+    @property
+    def midpoint(self) -> float:
+        return (self.apparent_lower_bound + self.apparent_upper_bound) / 2
+
+    def as_plus_minus(self, *, precision: int = 3) -> str:
+        return (
+            f"{round(self.midpoint, precision)} ± "
+            f"{round(self.apparent_upper_bound - self.midpoint, precision)}"
+        )
 
 
 EMPTY_SET = Interval(0, 0, includes_lower_bound=False, includes_upper_bound=False)
