@@ -48,17 +48,20 @@ class Interval:
         start: Number = 0,
         end: Number = 0,
         *,
-        include_start: bool = True,
-        include_end: bool = True,
+        includes_lower_bound: bool = True,
+        includes_upper_bound: bool = True,
     ) -> None:
         # Put start & end in the right order
         if start > end:
             start, end = end, start
-            include_end, include_start = include_start, include_end
+            includes_upper_bound, includes_lower_bound = (
+                includes_lower_bound,
+                includes_upper_bound,
+            )
 
         # Lower and upper bound boolean flags (unbounded sides must be closed)
-        self.include_start = include_start or abs(start) == float("inf")
-        self.include_end = include_end or abs(end) == float("inf")
+        self.includes_lower_bound = includes_lower_bound or abs(start) == float("inf")
+        self.includes_upper_bound = includes_upper_bound or abs(end) == float("inf")
 
         # The presented values of the bounds
         self.apparent_start = start
@@ -66,11 +69,11 @@ class Interval:
 
         # The actual values of the bounds adjusted by a tiny number
         # TODO: this number's magnitude should depend on the Interval bound magnitude
-        if not self.include_start:
+        if not self.includes_lower_bound:
             self.actual_start: Number = start + Interval.epsilon
         else:
             self.actual_start = self.apparent_start
-        if not self.include_end:
+        if not self.includes_upper_bound:
             self.actual_end: Number = end - Interval.epsilon
         else:
             self.actual_end = self.apparent_end
@@ -81,14 +84,14 @@ class Interval:
         if self.apparent_start == self.apparent_end:
             return str(self.apparent_start)
         s, e = self.apparent_start, self.apparent_end
-        l_bracket: str = "[" if self.include_start else "("
-        r_bracket: str = "]" if self.include_end else ")"
+        l_bracket: str = "[" if self.includes_lower_bound else "("
+        r_bracket: str = "]" if self.includes_upper_bound else ")"
         return f"{l_bracket}{s}, {e}{r_bracket}"
 
     def __repr__(self) -> str:
         s, e = self.apparent_start, self.apparent_end
-        i_s: bool = self.include_start
-        i_e: bool = self.include_end
+        i_s: bool = self.includes_lower_bound
+        i_e: bool = self.includes_upper_bound
         return f"Interval(start={s}, end={e}, include_start={i_s}, include_end={i_e})"
 
     def __contains__(self, value: Number) -> bool:
@@ -99,8 +102,8 @@ class Interval:
             [
                 self.actual_start == other.actual_start,
                 self.actual_end == other.actual_end,
-                self.include_start == other.include_start,
-                self.include_end == other.include_end,
+                self.includes_lower_bound == other.includes_lower_bound,
+                self.includes_upper_bound == other.includes_upper_bound,
             ]
         )
 
@@ -127,48 +130,48 @@ class Interval:
         return Interval(
             self.actual_start,
             self.actual_end,
-            include_start=not self.include_start,
-            include_end=not self.include_end,
+            includes_lower_bound=not self.includes_lower_bound,
+            includes_upper_bound=not self.includes_upper_bound,
         )
 
     def __add__(self, value: Number) -> Interval:
         return Interval(
             self.apparent_start + value,
             self.apparent_end + value,
-            include_start=self.include_start,
-            include_end=self.include_end,
+            includes_lower_bound=self.includes_lower_bound,
+            includes_upper_bound=self.includes_upper_bound,
         )
 
     def __sub__(self, value: Number) -> Interval:
         return Interval(
             self.apparent_start - value,
             self.apparent_end - value,
-            include_start=self.include_start,
-            include_end=self.include_end,
+            includes_lower_bound=self.includes_lower_bound,
+            includes_upper_bound=self.includes_upper_bound,
         )
 
     def __mul__(self, value: Number) -> Interval:
         return Interval(
             self.apparent_start * value,
             self.apparent_end * value,
-            include_start=self.include_start,
-            include_end=self.include_end,
+            includes_lower_bound=self.includes_lower_bound,
+            includes_upper_bound=self.includes_upper_bound,
         )
 
     def __truediv__(self, value: Number) -> Interval:
         return Interval(
             self.apparent_start / value,
             self.apparent_end / value,
-            include_start=self.include_start,
-            include_end=self.include_end,
+            includes_lower_bound=self.includes_lower_bound,
+            includes_upper_bound=self.includes_upper_bound,
         )
 
     def __floordiv__(self, value: Number) -> Interval:
         return Interval(
             self.apparent_start // value,
             self.apparent_end // value,
-            include_start=self.include_start,
-            include_end=self.include_end,
+            includes_lower_bound=self.includes_lower_bound,
+            includes_upper_bound=self.includes_upper_bound,
         )
 
     def intersects(self, other: Interval) -> bool:
@@ -195,8 +198,8 @@ class Interval:
         return Interval(
             min(self.apparent_start, other.apparent_start),
             max(self.apparent_end, other.apparent_end),
-            include_start=min_lower_bounded.include_start,
-            include_end=max_upper_bounded.include_end,
+            includes_lower_bound=min_lower_bounded.includes_lower_bound,
+            includes_upper_bound=max_upper_bounded.includes_upper_bound,
         )
 
     @classmethod
@@ -232,11 +235,11 @@ class Interval:
 
     @property
     def interval_type(self) -> IntervalType:
-        if self.include_start and self.include_end:
+        if self.includes_lower_bound and self.includes_upper_bound:
             return "closed"
-        if not (self.include_start or self.include_end):
+        if not (self.includes_lower_bound or self.includes_upper_bound):
             return "open"
         return "half-open"
 
 
-EMPTY_SET = Interval(0, 0, include_start=False, include_end=False)
+EMPTY_SET = Interval(0, 0, includes_lower_bound=False, includes_upper_bound=False)

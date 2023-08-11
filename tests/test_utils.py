@@ -27,7 +27,7 @@ def test_lerp_invlerp_inverses() -> None:
 # no value can be clamped to the empty set
 def test_clamp_fail() -> None:
     with pytest.raises(ValueError):
-        x1 = Interval(0, 0, include_start=False, include_end=False)
+        x1 = Interval(0, 0, includes_lower_bound=False, includes_upper_bound=False)
         clamp(3, x1)
 
 
@@ -35,5 +35,5 @@ def test_clamp_fail() -> None:
 # bound is undefined
 def test_invlerp_fail() -> None:
     with pytest.raises(ZeroDivisionError):
-        x1 = Interval(0, 0, include_start=False, include_end=False)
+        x1 = Interval(0, 0, includes_lower_bound=False, includes_upper_bound=False)
         invlerp(x1, 5)

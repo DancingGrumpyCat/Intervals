@@ -6,8 +6,8 @@ Functions as an abstraction and superset of the range function.
 ## Basic usage example
 ```python
 # INITIALIZATION
-interval_1 = Interval(0, 5, include_start=False)
-interval_2 = Interval(3, 6, include_end=False)
+interval_1 = Interval(0, 5, includes_lower_bound=False)
+interval_2 = Interval(3, 6, includes_upper_bound=False)
 
 # METHODS & PROPERTIES
 str(interval_1) # 'Interval(0, 5]'
@@ -69,7 +69,7 @@ positive = Interval(0, +inf)
 integers = Interval(-inf, +inf)
 ```
 
-(Any side that is unbounded like this must be closed; doing `integers = Interval(-inf, +inf, include_start=False)` does the same thing as `integers = Interval(-inf, +inf, include_start=True)`.)
+(Any side that is unbounded like this must be closed; doing `integers = Interval(-inf, +inf, includes_lower_bound=False)` does the same thing as `integers = Interval(-inf, +inf, includes_lower_bound=True)`.)
 
 ### Using `itertools`
 
