@@ -28,3 +28,16 @@ def rand_uniform(interval: Interval, *, values: int = 1) -> float | list[float]:
     if values == 1:
         return f(interval)
     return [f(interval) for _ in range(values)]
+
+
+def lerp(interval: Interval, t: Number) -> Number:
+    return interval.apparent_start + t * interval.magnitude
+
+
+def invlerp(interval: Interval, value: Number) -> Number:
+    return (value - interval.apparent_start) / interval.magnitude
+
+
+def remap(interval1: Interval, interval2: Interval, value: Number) -> Number:
+    t: Number = invlerp(interval1, value)
+    return lerp(interval2, t)
