@@ -8,6 +8,7 @@ x = Interval(0, 5)
 def test_clamp() -> None:
     assert clamp(6, x) == 5
     assert clamp(-1, x) == 0
+    assert clamp(3, x) == 3
 
 
 def test_rand_uniform() -> None:
@@ -15,6 +16,7 @@ def test_rand_uniform() -> None:
         assert x.actual_start <= rand_uniform(x) <= x.actual_end
 
 
+# lerp and invlerp are inverses of each other, so applying both needs to do nothing
 def test_lerp_invlerp_inverses() -> None:
     t0 = 0.5
     value: Number = lerp(x, t0)
@@ -22,12 +24,15 @@ def test_lerp_invlerp_inverses() -> None:
     assert t0 == t1
 
 
+# no value can be clamped to the empty set
 def test_clamp_fail() -> None:
     with pytest.raises(ValueError):
         x1 = Interval(0, 0, include_start=False, include_end=False)
         clamp(3, x1)
 
 
+# no value can be within the empty set, so a value's percentage from the lower to upper
+# bound is undefined
 def test_invlerp_fail() -> None:
     with pytest.raises(ZeroDivisionError):
         x1 = Interval(0, 0, include_start=False, include_end=False)

@@ -18,11 +18,13 @@ def test_infinite() -> None:
     assert z.magnitude == float("inf")
 
 
+# lower bound can't be greater than upper bound
 def test_init_fail() -> None:
     with pytest.raises(ValueError):
         _ = Interval(5, 0)
 
 
+# step can't be the identity element
 def test_step_zero_fail() -> None:
     with pytest.raises(ValueError):
         x = Interval(0, 5)

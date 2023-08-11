@@ -8,7 +8,7 @@ def clamp(value: Number, interval: Interval) -> Number:
     Clamp value to within interval.
     """
     if interval.magnitude == 0:
-        raise ValueError("Magnitude of interval must be nonzero.")
+        raise ValueError("Magnitude of interval must be non-zero.")
     if interval.magnitude < 0:
         raise ValueError(
             "I have no idea how you got this error. \
