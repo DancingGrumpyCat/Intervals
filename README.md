@@ -1,24 +1,120 @@
 # Intervals
-Python module supporting math intervals as an abstraction and superset of the range function.
+Python module supporting math intervals.
+Functions as an abstraction and superset of the range function.
 
-## Basic usage examples
+
+## Basic usage example
 ```python
-x = Interval(0, 5, include_start=False)
-str(x) # 'Interval(0, 5]'
-list(x.step(2, start=-1)) # [1, 3, 5]
-list(x.step(2)) # [2, 4]
-x.interval_type # 'half-open'
-x.magnitude # 5
-4 in x # True
-0 in x # False
+# INITIALIZATION
+interval_1 = Interval(0, 5, include_start=False)
+interval_2 = Interval(3, 6, include_end=False)
+
+# METHODS & PROPERTIES
+str(interval_1) # 'Interval(0, 5]'
+list(interval_1.step(2, start=-1)) # [1, 3, 5]
+list(interval_1.step(2)) # [2, 4]
+interval_1.interval_type # 'half-open'
+interval_1.magnitude # 5
+4 in interval_1 # True
+0 in interval_1 # False
+interval_1 + 2 # Interval(2, 7, False, True)
+interval_1 * -1 # Interval(-5, 0, True, False) # NOTE the closed and opened bounds swapped order too
+interval_1 & interval_2 # Interval(3, 5, True, True)
+interval_1 | interval_2 # Interval(0, 6, False, False)
 ```
 
-## How it replaces `range`
+
+## Plus-Minus form
+```python
+interval_3 = Interval.from_plus_minus(2, 1.2)
+str(interval_3) # 'Interval[0.8, 3.2]'
+```
+
+The following (all spaces are removed, so others are also possible) are also equivalent:
+```python
+Interval.from_plus_minus(2, 1.2)
+Interval.from_plus_minus("2 +- 1.2")
+Interval.from_plus_minus("2 +/- 1.2")
+Interval.from_plus_minus("2 ± 1.2")
+Interval.from_plus_minus("2 pm 1.2")
+Interval.from_plus_minus("2 p/m 1.2")
+```
+
+
+## How it can replace `range`
 Instead of
 ```python
->>> [x**2 for x in range(10, 15, 2)]
+[x**2 for x in range(10, 15, 2)]
 ```
 you can now write
 ```python
->>>[x**2 for x in Interval(10, 14).step(2)]
+[x**2 for x in Interval(10, 14).step(2)]
+```
+and you can do a lot more, like floating point values:
+```python
+tau = 6.283_185_307
+[x**2 for x in Interval(-tau, tau).step(tau / 4)]
+```
+
+
+## Infinity
+
+You can create infinite (unbounded) intervals. I recommend combining this with the `itertools` `islice` module.
+
+```python
+inf = float("inf")
+
+negative = Interval(-inf, 0)
+positive = Interval(0, +inf)
+integers = Interval(-inf, +inf)
+```
+
+(Any side that is unbounded like this must be closed; doing `integers = Interval(-inf, +inf, include_start=False)` does the same thing as `integers = Interval(-inf, +inf, include_start=True)`.)
+
+### Using `itertools`
+
+The following examples assume `*` is imported from `itertools`.
+
+```python
+>>> interval_4 = Interval(1, float("inf"))
+>>> n_1mod4 = interval_4.step(4)
+```
+```python
+>>> list(islice(n_1mod4, 10))
+[1, 5, 9, 13, 17, 21, 25, 29, 33, 37]
+```
+```python
+from random import random
+>>> list(takewhile(lambda _: random() > 1/4, n_1mod4))
+[1, 5, 9, 13, 17]
+```
+
+## Utils
+
+```python
+interval_5 = Interval(0, 5)
+interval_6 = Interval(3, 12)
+```
+### `rand_uniform`
+(Uses `random.random`&mdash;not cryptographically secure.)
+```python
+>>> utils.rand_uniform(interval_5)
+3.184482794264942
+>>> utils.rand_uniform(interval_5, values=5)
+[3.1222991463963361,
+ 2.2991947013044474,
+ 2.8317198384298465,
+ 4.1059785415505439,
+ 1.7879902265000007]
+```
+### `lerp`, `invlerp`, and `remap`
+<aside><b>TODO</b>: add varargs support for <code>t</code> and <code>value</code>.</aside>
+
+```python
+>>> utils.lerp(interval_5, 0.3)
+1.5
+>>> utils.invlerp(interval_5, 1.5)
+0.3
+>>> utils.remap(interval_5, interval_6, 2.5)
+7.5
 ```

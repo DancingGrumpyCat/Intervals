@@ -51,12 +51,21 @@ class Interval:
         include_start: bool = True,
         include_end: bool = True,
     ) -> None:
+        # Put start & end in the right order
         if start > end:
             start, end = end, start
+            include_end, include_start = include_start, include_end
+
+        # Lower and upper bound boolean flags (unbounded sides must be closed)
         self.include_start = include_start or abs(start) == float("inf")
         self.include_end = include_end or abs(end) == float("inf")
+
+        # The presented values of the bounds
         self.apparent_start = start
         self.apparent_end = end
+
+        # The actual values of the bounds adjusted by a tiny number
+        # TODO: this number's magnitude should depend on the Interval bound magnitude
         if not self.include_start:
             self.actual_start: Number = start + Interval.epsilon
         else:
@@ -181,9 +190,13 @@ class Interval:
             raise ValueError(
                 "intervals must intersect or be adjacent to create a union"
             )
+        min_lower_bounded = self if self.actual_start < other.actual_start else other
+        max_upper_bounded = self if self.actual_end > other.actual_end else other
         return Interval(
             min(self.apparent_start, other.apparent_start),
             max(self.apparent_end, other.apparent_end),
+            include_start=min_lower_bounded.include_start,
+            include_end=max_upper_bounded.include_end,
         )
 
     @classmethod
@@ -201,7 +214,12 @@ class Interval:
         ```
         """
         if s is not None:
-            s = s.replace(" ", "").replace("/", "").replace("±", "+-")
+            s = (
+                s.replace(" ", "")
+                .replace("/", "")
+                .replace("±", "+-")
+                .replace("pm", "+-")
+            )
             center, plusminus = (float(x) for x in s.split("+-"))
         return Interval(start=(center - plusminus), end=(center + plusminus))
 
