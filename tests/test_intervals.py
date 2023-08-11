@@ -9,7 +9,7 @@ def test_init() -> None:
     # TODO: generate a few random intervals and test them
     assert x.upper_bound >= x.lower_bound
     assert x.apparent_upper_bound <= x.upper_bound
-    assert x.lower_bound <= x.upper_bound
+    assert x.apparent_lower_bound >= x.lower_bound
 
 
 def test_infinite() -> None:
