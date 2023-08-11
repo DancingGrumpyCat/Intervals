@@ -2,6 +2,8 @@
 Python module supporting math intervals.
 Functions as an abstraction and superset of the range function.
 
+Many methods and examples herein are taken from [https://en.wikipedia.org/wiki/Interval_arithmetic].
+
 
 ## Basic usage example
 ```python
@@ -14,7 +16,7 @@ str(interval_1) # 'Interval(0, 5]'
 list(interval_1.step(2, start=-1)) # [1, 3, 5]
 list(interval_1.step(2)) # [2, 4]
 interval_1.interval_type # 'half-open'
-interval_1.magnitude # 5
+interval_1.diameter # 5
 4 in interval_1 # True
 0 in interval_1 # False
 interval_1 + 2 # Interval(2, 7, False, True)
@@ -29,6 +31,7 @@ interval_1 | interval_2 # Interval(0, 6, False, False)
 interval_3 = Interval.from_plus_minus(2, 1.2)
 str(interval_3) # 'Interval[0.8, 3.2]'
 ```
+The diameter of such an interval will be double its plus/minus value.
 
 The following (all spaces are removed, so others are also possible) are also equivalent:
 ```python
@@ -54,6 +57,17 @@ and you can do a lot more, like floating point values:
 ```python
 tau = 6.283_185_307
 [x**2 for x in Interval(-tau, tau).step(tau / 4)]
+```
+
+## Arithmetic operations between two intervals
+Use the `binary_fn` method.
+
+```python
+>>> weight = Interval.from_plus_minus(80, 0.5) # accurate to the nearest kg
+>>> height = Interval.from_plus_minus(1.79, 0.005) # accurate to the nearest cm
+>>> bmi = weight.binary_fn(height, lambda x, y: x / y**2)
+>>> bmi.truncate(3)
+[24.673, 25.266]
 ```
 
 

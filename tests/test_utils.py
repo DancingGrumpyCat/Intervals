@@ -13,7 +13,7 @@ def test_clamp() -> None:
 
 def test_rand_uniform() -> None:
     for _ in Interval(0, 1000).step(1):
-        assert x.actual_start <= rand_uniform(x) <= x.actual_end
+        assert x.lower_bound <= rand_uniform(x) <= x.upper_bound
 
 
 # lerp and invlerp are inverses of each other, so applying both needs to do nothing
