@@ -2,11 +2,11 @@ import pytest
 from intervals import Interval
 
 
+# TODO: generate a few random intervals and test them
 x = Interval(0, 5)
 
 
 def test_init() -> None:
-    # TODO: generate a few random intervals and test them
     assert x.upper_bound >= x.lower_bound
     assert x.apparent_upper_bound <= x.upper_bound
     assert x.apparent_lower_bound >= x.lower_bound

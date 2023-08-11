@@ -23,6 +23,8 @@ _INF = float("inf")
 # -  Fuzzy sets, Information and Control, Volume 8, Issue 3, 1965, Pages 338-353.
 # -  ISSN 0019-9958.
 # -  https://doi.org/10.1016/S0019-9958(65)90241-X.
+# Extra methods:
+# -  integral
 
 
 class Interval:
@@ -228,8 +230,6 @@ class Interval:
         ### Description
         Combines two intervals with an arbitrary binary function. Recommended to use
         this with the `operator` module.
-
-        Currently only supports closed intervals.
         """
         x1, x2, y1, y2 = (
             self.apparent_lower_bound,
@@ -280,6 +280,12 @@ class Interval:
             includes_upper_bound=False,
         )
 
+    def as_plus_minus(self, *, precision: int = 3) -> str:
+        return (
+            f"{round(self.midpoint, precision)} ± "
+            f"{round(self.apparent_upper_bound - self.midpoint, precision)}"
+        )
+
     @property
     def diameter(self) -> float:
         """
@@ -298,12 +304,6 @@ class Interval:
     @property
     def midpoint(self) -> float:
         return (self.apparent_lower_bound + self.apparent_upper_bound) / 2
-
-    def as_plus_minus(self, *, precision: int = 3) -> str:
-        return (
-            f"{round(self.midpoint, precision)} ± "
-            f"{round(self.apparent_upper_bound - self.midpoint, precision)}"
-        )
 
 
 EMPTY_SET = Interval(0, 0, includes_lower_bound=False, includes_upper_bound=False)
