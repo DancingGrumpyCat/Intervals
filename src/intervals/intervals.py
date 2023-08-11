@@ -107,6 +107,18 @@ class Interval:
             ]
         )
 
+    def truncate(self) -> Interval:
+        # The lower bound and upper bound must be lowered and raised respectively,
+        # expanding the interval, because the output interval needs to be a (non-strict)
+        # superset of the input interval.
+        # Its lower and upper bounds close because it's being truncated.
+        return Interval(
+            self.apparent_start // 1,
+            self.apparent_end // 1 + 1,
+            includes_lower_bound=True,
+            includes_upper_bound=True,
+        )
+
     def step(
         self,
         step: float,
