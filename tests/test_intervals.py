@@ -9,6 +9,15 @@ def test_init() -> None:
     assert x.actual_start <= x.actual_end
 
 
+def test_infinite() -> None:
+    x = Interval(0, float("inf"))
+    y = Interval(float("-inf"), 0)
+    z = Interval(float("-inf"), float("inf"))
+    assert x.magnitude == float("inf")
+    assert y.magnitude == float("inf")
+    assert z.magnitude == float("inf")
+
+
 def test_init_fail() -> None:
     with pytest.raises(ValueError):
         _ = Interval(5, 0)
