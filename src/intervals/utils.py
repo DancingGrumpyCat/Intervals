@@ -19,8 +19,12 @@ def clamp(value: Number, interval: Interval) -> Number:
 
 def rand_uniform(interval: Interval, *, values: int = 1) -> float | list[float]:
     """
-    Return a random float within interval.
+    Return a random float within finite interval.
     """
+    if abs(interval.apparent_start) == float("inf") or abs(
+        interval.apparent_end
+    ) == float("inf"):
+        raise ValueError(f"bounds of interval (was {interval}) must be finite")
 
     def f(i: Interval) -> float:
         return random.random() * i.magnitude + i.actual_start

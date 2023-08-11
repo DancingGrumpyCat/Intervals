@@ -52,9 +52,9 @@ class Interval:
         include_end: bool = True,
     ) -> None:
         if start > end:
-            raise ValueError(f"lower bound {start} greater than upper bound {end}")
-        self.include_start = include_start
-        self.include_end = include_end
+            start, end = end, start
+        self.include_start = include_start or abs(start) == float("inf")
+        self.include_end = include_end or abs(end) == float("inf")
         self.apparent_start = start
         self.apparent_end = end
         if not self.include_start:
@@ -80,23 +80,37 @@ class Interval:
         s, e = self.apparent_start, self.apparent_end
         i_s: bool = self.include_start
         i_e: bool = self.include_end
-        return f"Interval({s}, {e}, {i_s}, {i_e})"
+        return f"Interval(start={s}, end={e}, include_start={i_s}, include_end={i_e})"
 
     def __contains__(self, value: Number) -> bool:
         return self.actual_start <= value <= self.actual_end
 
-    def step(self, step: float, start: float | None = None) -> Iterator[float]:
+    def __eq__(self, other: Interval) -> bool:
+        return all(
+            [
+                self.actual_start == other.actual_start,
+                self.actual_end == other.actual_end,
+                self.include_start == other.include_start,
+                self.include_end == other.include_end,
+            ]
+        )
+
+    def step(
+        self,
+        step: float,
+        start: float | None = None,
+    ) -> Iterator[float]:
         """
         ### Description
         A generator function that, like Python's default `range`, yields values between
         `start` and `stop`, with step `step`.
         """
-        if step <= 0:
-            raise ValueError("step must be greater than 0")
         if start is None:
-            start = self.apparent_start
+            start = self.actual_start
         start %= step
-        while start <= self.actual_end:
+        if step == 0:
+            raise ValueError("step must be non-zero")
+        while start in self:
             yield start
             start += step
 
@@ -148,6 +162,30 @@ class Interval:
             include_end=self.include_end,
         )
 
+    def intersects(self, other: Interval) -> bool:
+        return (
+            other.apparent_start > self.apparent_end
+            or self.apparent_start > other.apparent_end
+        )
+
+    def __and__(self, other: Interval) -> Interval:
+        if self.intersects(other):
+            return EMPTY_SET
+        return Interval(
+            max(self.apparent_start, other.apparent_start),
+            min(self.apparent_end, other.apparent_end),
+        )
+
+    def __or__(self, other: Interval) -> Interval:
+        if self.intersects(other):
+            raise ValueError(
+                "intervals must intersect or be adjacent to create a union"
+            )
+        return Interval(
+            min(self.apparent_start, other.apparent_start),
+            max(self.apparent_end, other.apparent_end),
+        )
+
     @classmethod
     def from_plus_minus(
         cls, center: Number = 0, plusminus: Number = 0, s: str | None = None
@@ -181,3 +219,6 @@ class Interval:
         if not (self.include_start or self.include_end):
             return "open"
         return "half-open"
+
+
+EMPTY_SET = Interval(0, 0, include_start=False, include_end=False)
