@@ -27,12 +27,17 @@ class Bounds:
         upper_closure: IntervalType = "closed",
     ) -> None:
         self.lower_bound = lower_bound
+        self.upper_bound = upper_bound
+
         self.lower_closure = lower_closure
+        self.upper_closure = upper_closure
+
+        # The actual values of the bounds adjusted by a tiny number
+        # TODO: this number's magnitude should depend somehow on the magnitude of the
+        # interval's bounds
         self.adjusted_lower_bound: Number = lower_bound + EPSILON * (
             lower_closure == "open"
         )
-        self.upper_bound = upper_bound
-        self.upper_closure = upper_closure
         self.adjusted_upper_bound: Number = upper_bound - EPSILON * (
             upper_closure == "open"
         )
@@ -76,10 +81,19 @@ class Interval:
         )
 
         # Put start & end in the right order
+        # TODO: make a helper class for each bounding side
         if bounds.lower_bound > bounds.upper_bound:
             bounds.lower_bound, bounds.upper_bound = (
                 bounds.upper_bound,
                 bounds.lower_bound,
+            )
+            bounds.lower_closure, bounds.upper_closure = (
+                bounds.upper_closure,
+                bounds.lower_closure,
+            )
+            bounds.adjusted_lower_bound, bounds.adjusted_upper_bound = (
+                bounds.adjusted_upper_bound,
+                bounds.adjusted_lower_bound,
             )
 
         # The presented values of the bounds
@@ -95,17 +109,8 @@ class Interval:
             "closed" if abs(bounds.upper_bound) == INF else bounds.upper_closure
         )
 
-        # The actual values of the bounds adjusted by a tiny number
-        # TODO: this number's magnitude should depend somehow on the magnitude of the
-        # interval's bounds
-        if self.lower_closure == "open":
-            self.adjusted_lower_bound: Number = bounds.adjusted_lower_bound
-        else:
-            self.adjusted_lower_bound = bounds.adjusted_lower_bound
-        if self.upper_closure == "open":
-            self.adjusted_upper_bound: Number = bounds.adjusted_lower_bound
-        else:
-            self.adjusted_upper_bound = bounds.adjusted_upper_bound
+        self.adjusted_lower_bound = bounds.adjusted_lower_bound
+        self.adjusted_upper_bound = bounds.adjusted_upper_bound
 
     def __str__(self) -> str:
         if self.diameter == 0:
@@ -179,15 +184,19 @@ class Interval:
         """
         if start is None:
             start = self.lower_bound
-        elif start not in self:
-            start += self.lower_bound + start % step
+        if start not in self:
+            start = self.lower_bound + start % step
         if step == 0:
             raise ValueError("step must be non-zero")
         counter = 1
         current: Number = start
+        # DEBUG:
+        # print(f"{current=}")
         while current in self:
             yield current
             current = start + counter * step
+            # DEBUG:
+            # print(f"{current=}")
             counter += 1
 
     @staticmethod
@@ -401,5 +410,11 @@ class Interval:
 
 
 EPSILON: Number = 1e-15
+INF: Number = float("inf")
+EMPTY_SET: Interval = Interval(0, 0, lower_closure="open", upper_closure="open")
+UNIT: Interval = Interval(0, 1)
+NEGATIVE_UNIT = Interval(-1, 0)
+UNIT_DISK: Interval = NEGATIVE_UNIT | UNIT
+POSITIVE_REALS: Interval = Interval(0, INF)
 NATURALS: Iterator[int] = (int(x) for x in POSITIVE_REALS.step(1))
 WHOLE_NUMBERS: Iterator[int] = (int(x) for x in (POSITIVE_REALS + 1).step(1))
