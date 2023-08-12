@@ -28,12 +28,12 @@ class Bounds:
     ) -> None:
         self.lower_bound = lower_bound
         self.lower_closure = lower_closure
-        self.adjusted_lower_bound: Number = lower_bound + _EPSILON * (
+        self.adjusted_lower_bound: Number = lower_bound + EPSILON * (
             lower_closure == "open"
         )
         self.upper_bound = upper_bound
         self.upper_closure = upper_closure
-        self.adjusted_upper_bound: Number = upper_bound - _EPSILON * (
+        self.adjusted_upper_bound: Number = upper_bound - EPSILON * (
             upper_closure == "open"
         )
 
@@ -89,10 +89,10 @@ class Interval:
         # Lower and upper bound interval type (unbounded sides must be closed)
         # Interval type is either closed or open
         self.lower_closure: IntervalType = (
-            "closed" if abs(bounds.lower_bound) == _INF else bounds.lower_closure
+            "closed" if abs(bounds.lower_bound) == INF else bounds.lower_closure
         )
         self.upper_closure: IntervalType = (
-            "closed" if abs(bounds.upper_bound) == _INF else bounds.upper_closure
+            "closed" if abs(bounds.upper_bound) == INF else bounds.upper_closure
         )
 
         # The actual values of the bounds adjusted by a tiny number
@@ -206,7 +206,7 @@ class Interval:
         try:
             return fn(x, y)
         except ZeroDivisionError:
-            return _INF * sign(x)
+            return INF * sign(x)
 
     def __invert__(self) -> Interval:
         return Interval(
