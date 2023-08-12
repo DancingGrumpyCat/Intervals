@@ -1,3 +1,3 @@
-# Intervals.py
-
-Add methods to shrink and expand (left, right, centered) intervals
+- [ ] Add methods to shrink and expand (left, right, centered) intervals
+- [ ] Move binary_fn outside of Interval class
+- [ ] Change EPSILON out for something like math.nextfloat

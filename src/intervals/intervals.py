@@ -400,10 +400,6 @@ class Interval:
         return (self.lower_bound + self.upper_bound) / 2
 
 
-EPSILON = 1e-15  # TODO: change this out for something like math.nextfloat
-INF = float("inf")
-EMPTY_SET = Interval(0, 0, lower_closure="open", upper_closure="open")
-UNIT = Interval(0, 1, upper_closure="open")
-POSITIVE_REALS = Interval(0, INF)
+EPSILON: Number = 1e-15
 NATURALS: Iterator[int] = (int(x) for x in POSITIVE_REALS.step(1))
 WHOLE_NUMBERS: Iterator[int] = (int(x) for x in (POSITIVE_REALS + 1).step(1))
