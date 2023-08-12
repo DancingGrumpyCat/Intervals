@@ -8,8 +8,8 @@ Many methods and examples herein are taken from [https://en.wikipedia.org/wiki/I
 ## Basic usage example
 ```python
 # INITIALIZATION
-interval_1 = Interval(0, 5, includes_lower_bound=False)
-interval_2 = Interval(3, 6, includes_upper_bound=False)
+interval_1 = Interval(Bounds(0, 5, lower_closure="open"))
+interval_2 = Interval(Bounds(3, 6, upper_closure="closed"))
 
 # METHODS & PROPERTIES
 str(interval_1) # 'Interval(0, 5]'
@@ -19,10 +19,10 @@ interval_1.interval_type # 'half-open'
 interval_1.diameter # 5
 4 in interval_1 # True
 0 in interval_1 # False
-interval_1 + 2 # Interval(2, 7, False, True)
-interval_1 * -1 # Interval(-5, 0, True, False) # NOTE the closed and opened bounds swapped order too
-interval_1 & interval_2 # Interval(3, 5, True, True)
-interval_1 | interval_2 # Interval(0, 6, False, False)
+interval_1 + 2 # (2, 7]
+interval_1 * -1 # [-5, 0) # NOTE the closed and opened bounds swapped order too
+interval_1 & interval_2 # [3, 5]
+interval_1 | interval_2 # (0, 6)
 ```
 
 
@@ -51,12 +51,12 @@ Instead of
 ```
 you can now write
 ```python
-[x**2 for x in Interval(10, 14).step(2)]
+[x**2 for x in Interval(Bounds(10, 14)).step(2)]
 ```
 and you can do a lot more, like floating point values:
 ```python
 tau = 6.283_185_307
-[x**2 for x in Interval(-tau, tau).step(tau / 4)]
+[x**2 for x in Interval(Bounds(-tau, tau)).step(tau / 4)]
 ```
 
 ## Arithmetic operations between two intervals
