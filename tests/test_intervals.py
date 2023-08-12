@@ -1,11 +1,12 @@
 import pytest
-from intervals import Interval, Bounds
+from intervals import Interval, Number
 
 
 # TODO: generate a few random intervals and test them
-x = Interval(Bounds(0, 5))
+x = Interval(0, 5)
 
 
+# bounds must be in the right order
 def test_init() -> None:
     assert x.upper_bound >= x.lower_bound
     assert x.upper_bound <= x.adjusted_upper_bound
@@ -29,12 +30,16 @@ def test_infinite() -> None:
 
 # real world example
 def test_binary_fn() -> None:
+    def get_bmi(height: Number, weight: Number) -> Number:
+        return height / weight**2
+
     weight: Interval = Interval.from_plus_minus(80, 0.5)
     height: Interval = Interval.from_plus_minus(1.79, 0.005)
-    bmi: Interval = weight.binary_fn(height, lambda x, y: x / y**2)
+    bmi: Interval = weight.binary_fn(height, get_bmi)
     assert str(bmi.truncate(3)) == "[24.673, 25.266)"
 
 
+# from_plus_minus and as_plus_minus are conceptually inverses
 def test_to_from_plusminus() -> None:
     assert (
         str(Interval.from_plus_minus(string=x.as_plus_minus(precision=3)))

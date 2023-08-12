@@ -7,7 +7,7 @@ if TYPE_CHECKING:
     from typing import Callable
 
 Number = Union[int, float]
-"""A type alias for the float | int union."""
+"""A type alias for the `float | int` union."""
 IntervalType = Literal["closed", "open", "half-open"]
 """
 Intervals can be closed (on both ends), open (on both ends), or half-open
@@ -65,8 +65,8 @@ class Interval:
         upper_bound: Number,
         /,
         *,
-        lower_closure: IntervalType,
-        upper_closure: IntervalType,
+        lower_closure: IntervalType = "closed",
+        upper_closure: IntervalType = "closed",
     ) -> None:
         # Initialize bounds
         bounds = Bounds(
