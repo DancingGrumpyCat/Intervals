@@ -209,13 +209,18 @@ class Interval:
     def _x_div_0_is_inf(
         x: Number, y: Number, fn: Callable[[Number, Number], Number]
     ) -> Number:
-        def sign(x: Number) -> Literal[-1, 0, 1]:
+        """
+        A private staticmethod. Handles floor and true division by zero as INF or -INF.
+        """
+
+        # Python should really have a signum function
+        def signum(x: Number) -> Literal[-1, 0, 1]:
             return (x > 0) - (x < 0)
 
         try:
             return fn(x, y)
         except ZeroDivisionError:
-            return INF * sign(x)
+            return INF * signum(x)
 
     def __invert__(self) -> Interval:
         return Interval(
@@ -337,8 +342,9 @@ class Interval:
     ) -> Interval:
         """
         ### Description
-        Combines two intervals with an arbitrary binary function. Recommended to use
-        this with the `operator` module.
+        Combines two intervals using an arbitrary binary function of type `Number ->
+        Number -> Number`. For small arithmetic expressions, the `operator` module may
+        be handy. Otherwise, a `lambda` expression is usually preferred.
         """
         x1, x2, y1, y2 = (
             self.lower_bound,
@@ -384,6 +390,10 @@ class Interval:
         return Interval(center - plusminus, center + plusminus, upper_closure="open")
 
     def as_plus_minus(self, *, precision: int = 3) -> str:
+        """
+        Returns a string representing an interval in plus-minus form, for example
+        `[-1, 7] -> "3 ± 4"`. Loses information about whether the bounds are closed.
+        """
         return (
             f"{round(self.midpoint, precision)} ± "
             f"{round(self.upper_bound - self.midpoint, precision)}"
@@ -398,6 +408,11 @@ class Interval:
 
     @property
     def interval_type(self) -> IntervalType:
+        """
+        The type of interval can be `"closed"` (if both bounds are either closed or
+        infinite), `"open"` (if both bounds are open), or `"half-open"` (if neither of
+        the above is true).
+        """
         if self.lower_closure == "closed" and self.upper_closure == "closed":
             return "closed"
         if self.lower_closure == "open" and self.upper_closure == "open":
@@ -413,7 +428,7 @@ EPSILON: Number = 1e-15
 INF: Number = float("inf")
 EMPTY_SET: Interval = Interval(0, 0, lower_closure="open", upper_closure="open")
 UNIT: Interval = Interval(0, 1)
-NEGATIVE_UNIT = Interval(-1, 0)
+NEGATIVE_UNIT: Interval = Interval(-1, 0)
 UNIT_DISK: Interval = NEGATIVE_UNIT | UNIT
 POSITIVE_REALS: Interval = Interval(0, INF)
 NATURALS: Iterator[int] = (int(x) for x in POSITIVE_REALS.step(1))
