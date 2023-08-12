@@ -16,6 +16,11 @@ Intervals can be closed (on both ends), open (on both ends), or half-open
 """
 
 
+########################################################################################
+#                                  BOUNDS HELPER CLASS                                 #
+########################################################################################
+
+
 class Bounds:
     def __init__(
         self,
@@ -35,23 +40,17 @@ class Bounds:
         # The actual values of the bounds adjusted by a tiny number
         # TODO: this number's magnitude should depend somehow on the magnitude of the
         # interval's bounds
-        self.adjusted_lower_bound: Number = lower_bound + EPSILON * (
+        self.adjusted_lower_bound: Number = lower_bound + epsilon * (
             lower_closure == "open"
         )
-        self.adjusted_upper_bound: Number = upper_bound - EPSILON * (
+        self.adjusted_upper_bound: Number = upper_bound - epsilon * (
             upper_closure == "open"
         )
 
 
-# TODO: add fuzzy interval class, derived from Interval, with a membership function.
-# Figure out logic & arithmetic between such fuzzy sets
-# Source:
-# -  L.A. Zadeh,
-# -  Fuzzy sets, Information and Control, Volume 8, Issue 3, 1965, Pages 338-353.
-# -  ISSN 0019-9958.
-# -  https://doi.org/10.1016/S0019-9958(65)90241-X.
-# Extra methods:
-# -  integral
+########################################################################################
+#                                      MAIN CLASS                                      #
+########################################################################################
 
 
 class Interval:
@@ -62,6 +61,8 @@ class Interval:
     bound. Each of `start` and `end` may be finite or infinite, with some restrictions
     on which methods are then available to use.
     """
+
+    ####################################### INIT #######################################
 
     def __init__(
         self,
@@ -103,14 +104,57 @@ class Interval:
         # Lower and upper bound interval type (unbounded sides must be closed)
         # Interval type is either closed or open
         self.lower_closure: IntervalType = (
-            "closed" if abs(bounds.lower_bound) == INF else bounds.lower_closure
+            "closed" if abs(bounds.lower_bound) == inf else bounds.lower_closure
         )
         self.upper_closure: IntervalType = (
-            "closed" if abs(bounds.upper_bound) == INF else bounds.upper_closure
+            "closed" if abs(bounds.upper_bound) == inf else bounds.upper_closure
         )
 
         self.adjusted_lower_bound = bounds.adjusted_lower_bound
         self.adjusted_upper_bound = bounds.adjusted_upper_bound
+
+    @classmethod
+    def from_plus_minus(
+        cls, center: Number = 0, plusminus: Number = 0, *, string: str = ""
+    ) -> Interval:
+        """
+        ### Description
+        An additional class method to initialize an Interval instance in "plus/minus"
+        style. Alternatively you can enter it as a string.
+
+        The resulting interval is half-open (has a closed lower bound and an open
+        upper bound).
+
+        ### Example
+        (More examples available in the README.)
+        ```py
+        >>> Interval.from_plus_minus(4, 0.5)
+        # [3.5, 4.5)
+        ```
+        """
+        if not (center or plusminus):
+            if string == "":
+                raise ValueError("no values were passed")
+            string = (
+                string.replace(" ", "")
+                .replace("/", "")
+                .replace("±", "+-")
+                .replace("pm", "+-")
+            )
+            center, plusminus = (float(x) for x in string.split("+-"))
+        return Interval(center - plusminus, center + plusminus, upper_closure="open")
+
+    ##################################### EXPORTING ####################################
+
+    def as_plus_minus(self, *, precision: int = 3) -> str:
+        """
+        Returns a string representing an interval in plus-minus form, for example
+        `[-1, 7] -> "3 ± 4"`. Loses information about whether the bounds are closed.
+        """
+        return (
+            f"{round(self.midpoint, precision)} ± "
+            f"{round(self.upper_bound - self.midpoint, precision)}"
+        )
 
     def __str__(self) -> str:
         if self.diameter == 0:
@@ -133,6 +177,33 @@ class Interval:
             f"upper_bound = {hi}, upper_closure = {hic}"
             f")"
         )
+
+    ################################## HELPER METHODS ##################################
+
+    @staticmethod
+    def _invert(it: IntervalType) -> IntervalType:
+        if it == "closed":
+            return "open"
+        return "closed"
+
+    @staticmethod
+    def _x_div_0_is_inf(
+        x: Number, y: Number, fn: Callable[[Number, Number], Number]
+    ) -> Number:
+        """
+        A private staticmethod. Handles floor and true division by zero as INF or -INF.
+        """
+
+        # Python should really have a signum function
+        def signum(x: Number) -> Literal[-1, 0, 1]:
+            return (x > 0) - (x < 0)
+
+        try:
+            return fn(x, y)
+        except ZeroDivisionError:
+            return inf * signum(x)
+
+    ####################################### MATH #######################################
 
     def __contains__(self, value: Number) -> bool:
         return self.adjusted_lower_bound <= value <= self.adjusted_upper_bound
@@ -198,29 +269,6 @@ class Interval:
             # DEBUG:
             # print(f"{current=}")
             counter += 1
-
-    @staticmethod
-    def _invert(it: IntervalType) -> IntervalType:
-        if it == "closed":
-            return "open"
-        return "closed"
-
-    @staticmethod
-    def _x_div_0_is_inf(
-        x: Number, y: Number, fn: Callable[[Number, Number], Number]
-    ) -> Number:
-        """
-        A private staticmethod. Handles floor and true division by zero as INF or -INF.
-        """
-
-        # Python should really have a signum function
-        def signum(x: Number) -> Literal[-1, 0, 1]:
-            return (x > 0) - (x < 0)
-
-        try:
-            return fn(x, y)
-        except ZeroDivisionError:
-            return INF * signum(x)
 
     def __invert__(self) -> Interval:
         return Interval(
@@ -313,7 +361,7 @@ class Interval:
 
     def __and__(self, other: Interval) -> Interval:
         if not self.intersects(other):
-            return EMPTY_SET
+            return empty_set
         return Interval(
             max(self.lower_bound, other.lower_bound),
             min(self.upper_bound, other.upper_bound),
@@ -358,46 +406,7 @@ class Interval:
             max(possible_bounds),
         )
 
-    @classmethod
-    def from_plus_minus(
-        cls, center: Number = 0, plusminus: Number = 0, *, string: str = ""
-    ) -> Interval:
-        """
-        ### Description
-        An additional class method to initialize an Interval instance in "plus/minus"
-        style. Alternatively you can enter it as a string.
-
-        The resulting interval is half-open (has a closed lower bound and an open
-        upper bound).
-
-        ### Example
-        (More examples available in the README.)
-        ```py
-        >>> Interval.from_plus_minus(4, 0.5)
-        # [3.5, 4.5)
-        ```
-        """
-        if not (center or plusminus):
-            if string == "":
-                raise ValueError("no values were passed")
-            string = (
-                string.replace(" ", "")
-                .replace("/", "")
-                .replace("±", "+-")
-                .replace("pm", "+-")
-            )
-            center, plusminus = (float(x) for x in string.split("+-"))
-        return Interval(center - plusminus, center + plusminus, upper_closure="open")
-
-    def as_plus_minus(self, *, precision: int = 3) -> str:
-        """
-        Returns a string representing an interval in plus-minus form, for example
-        `[-1, 7] -> "3 ± 4"`. Loses information about whether the bounds are closed.
-        """
-        return (
-            f"{round(self.midpoint, precision)} ± "
-            f"{round(self.upper_bound - self.midpoint, precision)}"
-        )
+    #################################### PROPERTIES ####################################
 
     @property
     def diameter(self) -> float:
@@ -421,15 +430,24 @@ class Interval:
 
     @property
     def midpoint(self) -> float:
+        """
+        The arithmetic average of the two endpoints, treating them as if they were
+        closed.
+        """
         return (self.lower_bound + self.upper_bound) / 2
 
 
-EPSILON: Number = 1e-15
-INF: Number = float("inf")
-EMPTY_SET: Interval = Interval(0, 0, lower_closure="open", upper_closure="open")
-UNIT: Interval = Interval(0, 1)
-NEGATIVE_UNIT: Interval = Interval(-1, 0)
-UNIT_DISK: Interval = NEGATIVE_UNIT | UNIT
-POSITIVE_REALS: Interval = Interval(0, INF)
-NATURALS: Iterator[int] = (int(x) for x in POSITIVE_REALS.step(1))
-WHOLE_NUMBERS: Iterator[int] = (int(x) for x in (POSITIVE_REALS + 1).step(1))
+########################################################################################
+#                                       CONSTANTS                                      #
+########################################################################################
+
+epsilon: Number = 1e-15
+inf: Number = float("inf")
+empty_set: Interval = Interval(0, 0, lower_closure="open", upper_closure="open")
+unit: Interval = Interval(0, 1)
+negative_unit: Interval = Interval(-1, 0)
+unit_disk: Interval = negative_unit | unit
+positive_reals: Interval = Interval(0, inf)
+naturals: Iterator[int] = (int(x) for x in positive_reals.step(1))
+whole_numbers: Iterator[int] = (int(x) for x in (positive_reals + 1).step(1))
+pi = Interval(223 / 71, 22 / 7, lower_closure="open", upper_closure="open")

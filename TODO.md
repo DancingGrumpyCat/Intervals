@@ -1,3 +1,13 @@
 - [ ] Add methods to shrink and expand (left, right, centered) intervals
-- [ ] Move binary_fn outside of Interval class
-- [ ] Change EPSILON out for something like math.nextfloat
+- [ ] Move `binary_fn` outside of Interval class
+- [ ] Change `epsilon` out for something like `math.nextfloat`
+- [ ] Fuzzy sets:
+  - [ ] Figure out logic & arithmetic between such fuzzy sets
+    - Source:
+      - L.A. Zadeh,
+      - Fuzzy sets, Information and Control, Volume 8, Issue 3, 1965, Pages 338-353.
+      - ISSN 0019-9958.
+      - [Digital Object Identifier Foundation](https://doi.org/10.1016/S0019-9958(65)90241-X).
+  - [ ] Extra methods:
+    - Integration? Maybe the user can do that using `sympy`.
+    - Intersection (`&`) and union (`|`) need to be changed.
