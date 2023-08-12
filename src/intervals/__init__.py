@@ -1,11 +1,14 @@
-from intervals.intervals import Interval, Number
-from intervals.utils import clamp, rand_uniform, lerp, invlerp
+from intervals.intervals import Interval, Number, Bounds, EMPTY_SET
+from intervals.utils import clamp, invlerp, lerp, rand_uniform, remap
 
 __all__: tuple[str, ...] = (
     "Interval",
+    "Bounds",
     "clamp",
     "rand_uniform",
     "lerp",
     "invlerp",
     "Number",
+    "remap",
+    "EMPTY_SET",
 )

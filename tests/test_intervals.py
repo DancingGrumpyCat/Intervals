@@ -1,15 +1,15 @@
 import pytest
-from intervals import Interval
+from intervals import Interval, Bounds
 
 
 # TODO: generate a few random intervals and test them
-x = Interval(0, 5)
+x = Interval(Bounds(0, 5))
 
 
 def test_init() -> None:
     assert x.upper_bound >= x.lower_bound
-    assert x.apparent_upper_bound <= x.upper_bound
-    assert x.apparent_lower_bound >= x.lower_bound
+    assert x.upper_bound <= x.adjusted_upper_bound
+    assert x.lower_bound >= x.adjusted_lower_bound
 
 
 def test_infinite() -> None:
@@ -17,13 +17,13 @@ def test_infinite() -> None:
 
     inf = float("inf")
 
-    x = Interval(0, inf)
-    y = Interval(-inf, 0)
-    z = Interval(-inf, inf)
+    x = Interval(Bounds(0, inf))
+    y = Interval(Bounds(-inf, 0))
+    z = Interval(Bounds(-inf, inf))
 
     assert x.diameter == y.diameter == z.diameter == inf
     assert list(islice(x.step(1), 4)) == [0, 1, 2, 3]
-    assert x + 1 == Interval(1, inf)
+    assert x + 1 == Interval(Bounds(1, inf))
     assert x * -1 == y
 
 
@@ -32,7 +32,7 @@ def test_binary_fn() -> None:
     weight: Interval = Interval.from_plus_minus(80, 0.5)
     height: Interval = Interval.from_plus_minus(1.79, 0.005)
     bmi: Interval = weight.binary_fn(height, lambda x, y: x / y**2)
-    assert str(bmi.truncate(3)) == "[24.673, 25.266]"
+    assert str(bmi.truncate(3)) == "[24.673, 25.266)"
 
 
 def test_to_from_plusminus() -> None:

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Union, Literal
+from typing import TYPE_CHECKING, Literal, Union
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
@@ -13,7 +13,30 @@ IntervalType = Literal["closed", "open", "half-open"]
 Intervals can be closed (on both ends), open (on both ends), or half-open
 (open on one end and closed on the other).
 """
+_EPSILON = 1e-15  # TODO: change this out for something like math.nextfloat
 _INF = float("inf")
+
+
+class Bounds:
+    def __init__(
+        self,
+        lower_bound: Number = 0,
+        upper_bound: Number = 0,
+        /,
+        *,
+        lower_closure: IntervalType = "closed",
+        upper_closure: IntervalType = "closed",
+    ) -> None:
+        self.lower_bound = lower_bound
+        self.lower_closure = lower_closure
+        self.adjusted_lower_bound: Number = lower_bound + _EPSILON * (
+            lower_closure == "open"
+        )
+        self.upper_bound = upper_bound
+        self.upper_closure = upper_closure
+        self.adjusted_upper_bound: Number = upper_bound - _EPSILON * (
+            upper_closure == "open"
+        )
 
 
 # TODO: add fuzzy interval class, derived from Interval, with a membership function.
@@ -36,75 +59,70 @@ class Interval:
     on which methods are then available to use.
     """
 
-    _epsilon = 1e-15  # TODO: change this out for something like math.nextfloat
-
-    def __init__(
-        self,
-        lower_bound: Number = 0,
-        upper_bound: Number = 0,
-        *,
-        includes_lower_bound: bool = True,
-        includes_upper_bound: bool = True,
-    ) -> None:
+    def __init__(self, bounds: Bounds) -> None:
         # Put start & end in the right order
-        if lower_bound > upper_bound:
-            lower_bound, upper_bound = upper_bound, lower_bound
-            includes_upper_bound, includes_lower_bound = (
-                includes_lower_bound,
-                includes_upper_bound,
+        if bounds.lower_bound > bounds.upper_bound:
+            bounds.lower_bound, bounds.upper_bound = (
+                bounds.upper_bound,
+                bounds.lower_bound,
             )
 
-        # Lower and upper bound boolean flags (unbounded sides must be closed)
-        self.includes_lower_bound: bool = (
-            includes_lower_bound or abs(lower_bound) == _INF
-        )
-        self.includes_upper_bound: bool = (
-            includes_upper_bound or abs(upper_bound) == _INF
-        )
-
         # The presented values of the bounds
-        self.apparent_lower_bound = lower_bound
-        self.apparent_upper_bound = upper_bound
+        self.lower_bound = bounds.lower_bound
+        self.upper_bound = bounds.upper_bound
+
+        # Lower and upper bound interval type (unbounded sides must be closed)
+        # Interval type is either closed or open
+        self.lower_closure: IntervalType = (
+            "closed" if abs(bounds.lower_bound) == _INF else bounds.lower_closure
+        )
+        self.upper_closure: IntervalType = (
+            "closed" if abs(bounds.upper_bound) == _INF else bounds.upper_closure
+        )
 
         # The actual values of the bounds adjusted by a tiny number
         # TODO: this number's magnitude should depend somehow on the magnitude of the
         # interval's bounds
-        if not self.includes_lower_bound:
-            self.lower_bound: Number = lower_bound + Interval._epsilon
+        if self.lower_closure == "open":
+            self.adjusted_lower_bound: Number = bounds.adjusted_lower_bound
         else:
-            self.lower_bound = self.apparent_lower_bound
-        if not self.includes_upper_bound:
-            self.upper_bound: Number = upper_bound - Interval._epsilon
+            self.adjusted_lower_bound = bounds.adjusted_lower_bound
+        if self.upper_closure == "open":
+            self.adjusted_upper_bound: Number = bounds.adjusted_lower_bound
         else:
-            self.upper_bound = self.apparent_upper_bound
+            self.adjusted_upper_bound = bounds.adjusted_upper_bound
 
     def __str__(self) -> str:
         if self.diameter == 0:
             return "∅"
-        if self.apparent_lower_bound == self.apparent_upper_bound:
-            return str(self.apparent_lower_bound)
-        s, e = self.apparent_lower_bound, self.apparent_upper_bound
-        l_bracket: str = "[" if self.includes_lower_bound else "("
-        r_bracket: str = "]" if self.includes_upper_bound else ")"
+        if self.lower_bound == self.upper_bound:
+            return str(self.lower_bound)
+        s, e = self.lower_bound, self.upper_bound
+        l_bracket: str = "[" if self.lower_closure == "closed" else "("
+        r_bracket: str = "]" if self.upper_closure == "closed" else ")"
         return f"{l_bracket}{s}, {e}{r_bracket}"
 
     def __repr__(self) -> str:
-        s, e = self.apparent_lower_bound, self.apparent_upper_bound
-        i_s: bool = self.includes_lower_bound
-        i_e: bool = self.includes_upper_bound
-        return f"Interval(start={s}, end={e}, include_start={i_s}, include_end={i_e})"
+        lo, hi = self.lower_bound, self.upper_bound
+        loc: IntervalType = self.lower_closure
+        hic: IntervalType = self.upper_closure
+        return (
+            f"Interval(Bounds("
+            f"lower_bound = {lo}, lower_closure = {loc}, "
+            f"upper_bound = {hi}, upper_closure = {hic}"
+        )
 
     def __contains__(self, value: Number) -> bool:
-        return self.lower_bound <= value <= self.upper_bound
+        return self.adjusted_lower_bound <= value <= self.adjusted_upper_bound
 
     def __eq__(self, other: Interval) -> bool:
         return all(
-            [
+            (
                 self.lower_bound == other.lower_bound,
                 self.upper_bound == other.upper_bound,
-                self.includes_lower_bound == other.includes_lower_bound,
-                self.includes_upper_bound == other.includes_upper_bound,
-            ]
+                self.lower_closure == other.lower_closure,
+                self.upper_closure == other.upper_closure,
+            )
         )
 
     def truncate(self, precision: int) -> Interval:
@@ -118,12 +136,13 @@ class Interval:
         # The lower bound and upper bound must be lowered and raised respectively,
         # expanding the interval, because the output interval needs to be a (non-strict)
         # superset of the input interval.
-        # Its lower and upper bounds close because it's being truncated.
+        # Its lower and upper bounds half-close because it's being truncated.
         return Interval(
-            _floor(self.apparent_lower_bound, _p=precision),
-            _ceil(self.apparent_upper_bound, _p=precision),
-            includes_lower_bound=True,
-            includes_upper_bound=True,
+            Bounds(
+                _floor(self.lower_bound, _p=precision),
+                _ceil(self.upper_bound, _p=precision),
+                upper_closure="open",
+            )
         )
 
     def step(
@@ -148,65 +167,86 @@ class Interval:
             start += step
 
     def __invert__(self) -> Interval:
+        def _invert(it: IntervalType) -> IntervalType:
+            if it == "closed":
+                return "open"
+            return "closed"
+
         return Interval(
-            self.lower_bound,
-            self.upper_bound,
-            includes_lower_bound=not self.includes_lower_bound,
-            includes_upper_bound=not self.includes_upper_bound,
+            Bounds(
+                self.lower_bound,
+                self.upper_bound,
+                lower_closure=_invert(self.lower_closure),
+                upper_closure=_invert(self.upper_closure),
+            )
         )
 
     def __add__(self, value: Number) -> Interval:
         return Interval(
-            self.apparent_lower_bound + value,
-            self.apparent_upper_bound + value,
-            includes_lower_bound=self.includes_lower_bound,
-            includes_upper_bound=self.includes_upper_bound,
+            Bounds(
+                self.lower_bound + value,
+                self.upper_bound + value,
+                lower_closure=self.lower_closure,
+                upper_closure=self.upper_closure,
+            )
         )
 
     def __sub__(self, value: Number) -> Interval:
         return Interval(
-            self.apparent_lower_bound - value,
-            self.apparent_upper_bound - value,
-            includes_lower_bound=self.includes_lower_bound,
-            includes_upper_bound=self.includes_upper_bound,
+            Bounds(
+                self.lower_bound - value,
+                self.upper_bound - value,
+                lower_closure=self.lower_closure,
+                upper_closure=self.upper_closure,
+            )
         )
 
     def __mul__(self, value: Number) -> Interval:
         return Interval(
-            self.apparent_lower_bound * value,
-            self.apparent_upper_bound * value,
-            includes_lower_bound=self.includes_lower_bound,
-            includes_upper_bound=self.includes_upper_bound,
+            Bounds(
+                self.lower_bound * value,
+                self.upper_bound * value,
+                lower_closure=self.lower_closure,
+                upper_closure=self.upper_closure,
+            )
         )
 
     def __truediv__(self, value: Number) -> Interval:
         return Interval(
-            self.apparent_lower_bound / value,
-            self.apparent_upper_bound / value,
-            includes_lower_bound=self.includes_lower_bound,
-            includes_upper_bound=self.includes_upper_bound,
+            Bounds(
+                self.lower_bound / value,
+                self.upper_bound / value,
+                lower_closure=self.lower_closure,
+                upper_closure=self.upper_closure,
+            )
         )
 
     def __floordiv__(self, value: Number) -> Interval:
         return Interval(
-            self.apparent_lower_bound // value,
-            self.apparent_upper_bound // value,
-            includes_lower_bound=self.includes_lower_bound,
-            includes_upper_bound=self.includes_upper_bound,
+            Bounds(
+                self.lower_bound // value,
+                self.upper_bound // value,
+                lower_closure=self.lower_closure,
+                upper_closure=self.upper_closure,
+            )
         )
 
     def intersects(self, other: Interval) -> bool:
-        return (
-            other.apparent_lower_bound > self.apparent_upper_bound
-            or self.apparent_lower_bound > other.apparent_upper_bound
+        return any(
+            (
+                (other.lower_bound > self.upper_bound),
+                (self.lower_bound > other.upper_bound),
+            )
         )
 
     def __and__(self, other: Interval) -> Interval:
         if self.intersects(other):
             return EMPTY_SET
         return Interval(
-            max(self.apparent_lower_bound, other.apparent_lower_bound),
-            min(self.apparent_upper_bound, other.apparent_upper_bound),
+            Bounds(
+                max(self.lower_bound, other.lower_bound),
+                min(self.upper_bound, other.upper_bound),
+            )
         )
 
     def __or__(self, other: Interval) -> Interval:
@@ -214,13 +254,19 @@ class Interval:
             raise ValueError(
                 "intervals must intersect or be adjacent to create a union"
             )
-        min_lower_bounded = self if self.lower_bound < other.lower_bound else other
-        max_upper_bounded = self if self.upper_bound > other.upper_bound else other
+        min_lower_bounded: Interval = (
+            self if self.lower_bound < other.lower_bound else other
+        )
+        max_upper_bounded: Interval = (
+            self if self.upper_bound > other.upper_bound else other
+        )
         return Interval(
-            min(self.apparent_lower_bound, other.apparent_lower_bound),
-            max(self.apparent_upper_bound, other.apparent_upper_bound),
-            includes_lower_bound=min_lower_bounded.includes_lower_bound,
-            includes_upper_bound=max_upper_bounded.includes_upper_bound,
+            Bounds(
+                min(self.lower_bound, other.lower_bound),
+                max(self.upper_bound, other.upper_bound),
+                lower_closure=min_lower_bounded.lower_closure,
+                upper_closure=max_upper_bounded.upper_closure,
+            )
         )
 
     def binary_fn(
@@ -232,17 +278,17 @@ class Interval:
         this with the `operator` module.
         """
         x1, x2, y1, y2 = (
-            self.apparent_lower_bound,
-            self.apparent_upper_bound,
-            other.apparent_lower_bound,
-            other.apparent_upper_bound,
+            self.lower_bound,
+            self.upper_bound,
+            other.lower_bound,
+            other.upper_bound,
         )
         possible_bounds: list[Number] = [fn(x1, y1), fn(x1, y2), fn(x2, y1), fn(x2, y2)]
         return Interval(
-            min(possible_bounds),
-            max(possible_bounds),
-            includes_lower_bound=True,
-            includes_upper_bound=True,
+            Bounds(
+                min(possible_bounds),
+                max(possible_bounds),
+            )
         )
 
     @classmethod
@@ -275,15 +321,13 @@ class Interval:
             )
             center, plusminus = (float(x) for x in string.split("+-"))
         return Interval(
-            lower_bound=(center - plusminus),
-            upper_bound=(center + plusminus),
-            includes_upper_bound=False,
+            Bounds(center - plusminus, center + plusminus, upper_closure="open")
         )
 
     def as_plus_minus(self, *, precision: int = 3) -> str:
         return (
             f"{round(self.midpoint, precision)} ± "
-            f"{round(self.apparent_upper_bound - self.midpoint, precision)}"
+            f"{round(self.upper_bound - self.midpoint, precision)}"
         )
 
     @property
@@ -291,19 +335,19 @@ class Interval:
         """
         The positive difference between the apparent lower and upper bounds.
         """
-        return self.apparent_upper_bound - self.apparent_lower_bound
+        return self.upper_bound - self.lower_bound
 
     @property
     def interval_type(self) -> IntervalType:
-        if self.includes_lower_bound and self.includes_upper_bound:
+        if self.lower_closure == "closed" and self.upper_closure == "closed":
             return "closed"
-        if not (self.includes_lower_bound or self.includes_upper_bound):
+        if self.lower_closure == "open" and self.upper_closure == "open":
             return "open"
         return "half-open"
 
     @property
     def midpoint(self) -> float:
-        return (self.apparent_lower_bound + self.apparent_upper_bound) / 2
+        return (self.lower_bound + self.upper_bound) / 2
 
 
-EMPTY_SET = Interval(0, 0, includes_lower_bound=False, includes_upper_bound=False)
+EMPTY_SET = Interval(Bounds(0, 0, lower_closure="open", upper_closure="open"))
