@@ -2,14 +2,14 @@
 Python module supporting math intervals.
 Functions as an abstraction and superset of the range function.
 
-Many methods and examples herein are taken from [https://en.wikipedia.org/wiki/Interval_arithmetic].
+Many methods and examples herein are taken from (Interval Arithmetic&mdash;Wikipedia)[https://en.wikipedia.org/wiki/Interval_arithmetic].
 
 
 ## Basic usage example
 ```python
 # INITIALIZATION
-interval_1 = Interval(Bounds(0, 5, lower_closure="open"))
-interval_2 = Interval(Bounds(3, 6, upper_closure="closed"))
+interval_1 = Interval(0, 5, lower_closure="open")
+interval_2 = Interval(3, 6, upper_closure="open")
 
 # METHODS & PROPERTIES
 str(interval_1) # 'Interval(0, 5]'
