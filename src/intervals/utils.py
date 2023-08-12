@@ -27,11 +27,20 @@ def rand_uniform(interval: Interval, *, values: int = 1) -> float | list[float]:
         raise ValueError(f"bounds of interval (was {interval}) must be finite")
 
     def f(i: Interval) -> float:
-        return random.random() * i.diameter + i.adjusted_lower_bound
+        return random.random() * i.diameter + i.lower_bound
 
     if values == 1:
         return f(interval)
     return [f(interval) for _ in range(values)]
+
+
+def rand_interval(
+    lower_bound_interval: Interval, upper_bound_interval: Interval
+) -> Interval:
+    return Interval(
+        rand_uniform(lower_bound_interval),
+        rand_uniform(upper_bound_interval),
+    )
 
 
 def lerp(interval: Interval, t: Number) -> Number:
