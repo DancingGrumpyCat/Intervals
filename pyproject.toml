@@ -43,12 +43,12 @@ select = [
     "W",
 ]
 ignore = [
-    "ANN101", # ANN: require annotation of Self, cls
+    "ANN101", # Require annotation of Self, cls
     "ANN102",
     "ANN401",
-    "RUF001", # RUF: Ambiguous characters for strings
-    "RUF002", # RUF: Ambiguous characters for docstring
-    "RUF003", # RUF: Ambiguous characters for comments
+    "RUF001", # Ambiguous characters for strings
+    "RUF002", # Ambiguous characters for docstring
+    "RUF003", # Ambiguous characters for comments
     "TCH004",
     "TRY003",
 ]
