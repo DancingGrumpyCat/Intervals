@@ -17,13 +17,13 @@ def test_infinite() -> None:
 
     inf = float("inf")
 
-    x = Interval(Bounds(0, inf))
-    y = Interval(Bounds(-inf, 0))
-    z = Interval(Bounds(-inf, inf))
+    x = Interval(0, inf)
+    y = Interval(-inf, 0)
+    z = Interval(-inf, inf)
 
     assert x.diameter == y.diameter == z.diameter == inf
     assert list(islice(x.step(1), 4)) == [0, 1, 2, 3]
-    assert x + 1 == Interval(Bounds(1, inf))
+    assert x + 1 == Interval(1, inf)
     assert x * -1 == y
 
 

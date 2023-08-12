@@ -59,7 +59,23 @@ class Interval:
     on which methods are then available to use.
     """
 
-    def __init__(self, bounds: Bounds) -> None:
+    def __init__(
+        self,
+        lower_bound: Number,
+        upper_bound: Number,
+        /,
+        *,
+        lower_closure: IntervalType,
+        upper_closure: IntervalType,
+    ) -> None:
+        # Initialize bounds
+        bounds = Bounds(
+            lower_bound,
+            upper_bound,
+            lower_closure=lower_closure,
+            upper_closure=upper_closure,
+        )
+
         # Put start & end in the right order
         if bounds.lower_bound > bounds.upper_bound:
             bounds.lower_bound, bounds.upper_bound = (
@@ -107,9 +123,10 @@ class Interval:
         loc: IntervalType = self.lower_closure
         hic: IntervalType = self.upper_closure
         return (
-            f"Interval(Bounds("
+            f"Interval("
             f"lower_bound = {lo}, lower_closure = {loc}, "
             f"upper_bound = {hi}, upper_closure = {hic}"
+            f")"
         )
 
     def __contains__(self, value: Number) -> bool:
@@ -138,11 +155,9 @@ class Interval:
         # superset of the input interval.
         # Its lower and upper bounds half-close because it's being truncated.
         return Interval(
-            Bounds(
-                _floor(self.lower_bound, _p=precision),
-                _ceil(self.upper_bound, _p=precision),
-                upper_closure="open",
-            )
+            _floor(self.lower_bound, _p=precision),
+            _ceil(self.upper_bound, _p=precision),
+            upper_closure="open",
         )
 
     def step(
@@ -173,62 +188,50 @@ class Interval:
             return "closed"
 
         return Interval(
-            Bounds(
-                self.lower_bound,
-                self.upper_bound,
-                lower_closure=_invert(self.lower_closure),
-                upper_closure=_invert(self.upper_closure),
-            )
+            self.lower_bound,
+            self.upper_bound,
+            lower_closure=_invert(self.lower_closure),
+            upper_closure=_invert(self.upper_closure),
         )
 
     def __add__(self, value: Number) -> Interval:
         return Interval(
-            Bounds(
-                self.lower_bound + value,
-                self.upper_bound + value,
-                lower_closure=self.lower_closure,
-                upper_closure=self.upper_closure,
-            )
+            self.lower_bound + value,
+            self.upper_bound + value,
+            lower_closure=self.lower_closure,
+            upper_closure=self.upper_closure,
         )
 
     def __sub__(self, value: Number) -> Interval:
         return Interval(
-            Bounds(
-                self.lower_bound - value,
-                self.upper_bound - value,
-                lower_closure=self.lower_closure,
-                upper_closure=self.upper_closure,
-            )
+            self.lower_bound - value,
+            self.upper_bound - value,
+            lower_closure=self.lower_closure,
+            upper_closure=self.upper_closure,
         )
 
     def __mul__(self, value: Number) -> Interval:
         return Interval(
-            Bounds(
-                self.lower_bound * value,
-                self.upper_bound * value,
-                lower_closure=self.lower_closure,
-                upper_closure=self.upper_closure,
-            )
+            self.lower_bound * value,
+            self.upper_bound * value,
+            lower_closure=self.lower_closure,
+            upper_closure=self.upper_closure,
         )
 
     def __truediv__(self, value: Number) -> Interval:
         return Interval(
-            Bounds(
-                self.lower_bound / value,
-                self.upper_bound / value,
-                lower_closure=self.lower_closure,
-                upper_closure=self.upper_closure,
-            )
+            self.lower_bound / value,
+            self.upper_bound / value,
+            lower_closure=self.lower_closure,
+            upper_closure=self.upper_closure,
         )
 
     def __floordiv__(self, value: Number) -> Interval:
         return Interval(
-            Bounds(
-                self.lower_bound // value,
-                self.upper_bound // value,
-                lower_closure=self.lower_closure,
-                upper_closure=self.upper_closure,
-            )
+            self.lower_bound // value,
+            self.upper_bound // value,
+            lower_closure=self.lower_closure,
+            upper_closure=self.upper_closure,
         )
 
     def intersects(self, other: Interval) -> bool:
@@ -243,10 +246,8 @@ class Interval:
         if self.intersects(other):
             return EMPTY_SET
         return Interval(
-            Bounds(
-                max(self.lower_bound, other.lower_bound),
-                min(self.upper_bound, other.upper_bound),
-            )
+            max(self.lower_bound, other.lower_bound),
+            min(self.upper_bound, other.upper_bound),
         )
 
     def __or__(self, other: Interval) -> Interval:
@@ -261,12 +262,10 @@ class Interval:
             self if self.upper_bound > other.upper_bound else other
         )
         return Interval(
-            Bounds(
-                min(self.lower_bound, other.lower_bound),
-                max(self.upper_bound, other.upper_bound),
-                lower_closure=min_lower_bounded.lower_closure,
-                upper_closure=max_upper_bounded.upper_closure,
-            )
+            min(self.lower_bound, other.lower_bound),
+            max(self.upper_bound, other.upper_bound),
+            lower_closure=min_lower_bounded.lower_closure,
+            upper_closure=max_upper_bounded.upper_closure,
         )
 
     def binary_fn(
@@ -285,10 +284,8 @@ class Interval:
         )
         possible_bounds: list[Number] = [fn(x1, y1), fn(x1, y2), fn(x2, y1), fn(x2, y2)]
         return Interval(
-            Bounds(
-                min(possible_bounds),
-                max(possible_bounds),
-            )
+            min(possible_bounds),
+            max(possible_bounds),
         )
 
     @classmethod
@@ -320,9 +317,7 @@ class Interval:
                 .replace("pm", "+-")
             )
             center, plusminus = (float(x) for x in string.split("+-"))
-        return Interval(
-            Bounds(center - plusminus, center + plusminus, upper_closure="open")
-        )
+        return Interval(center - plusminus, center + plusminus, upper_closure="open")
 
     def as_plus_minus(self, *, precision: int = 3) -> str:
         return (
@@ -350,4 +345,4 @@ class Interval:
         return (self.lower_bound + self.upper_bound) / 2
 
 
-EMPTY_SET = Interval(Bounds(0, 0, lower_closure="open", upper_closure="open"))
+EMPTY_SET = Interval(0, 0, lower_closure="open", upper_closure="open")

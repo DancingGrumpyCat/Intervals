@@ -2,7 +2,7 @@ import pytest
 from intervals import Interval, clamp, rand_uniform, lerp, invlerp
 from intervals import Number, Bounds, EMPTY_SET
 
-x = Interval(Bounds(0, 5))
+x = Interval(0, 5)
 
 
 def test_clamp() -> None:
@@ -12,7 +12,7 @@ def test_clamp() -> None:
 
 
 def test_rand_uniform() -> None:
-    for _ in Interval(Bounds(0, 1000, lower_closure="open")).step(1):
+    for _ in Interval(0, 1000, lower_closure="open").step(1):
         assert x.lower_bound <= rand_uniform(x) <= x.upper_bound
 
 

@@ -51,12 +51,12 @@ Instead of
 ```
 you can now write
 ```python
-[x**2 for x in Interval(Bounds(10, 14)).step(2)]
+[x**2 for x in Interval(10, 14).step(2)]
 ```
 and you can do a lot more, like floating point values:
 ```python
 tau = 6.283_185_307
-[x**2 for x in Interval(Bounds(-tau, tau)).step(tau / 4)]
+[x**2 for x in Interval(-tau, tau).step(tau / 4)]
 ```
 
 ## Arithmetic operations between two intervals
