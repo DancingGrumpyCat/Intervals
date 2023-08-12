@@ -1,5 +1,4 @@
 - [ ] Add methods to shrink and expand (left, right, centered) intervals
-- [ ] Move `binary_fn` outside of Interval class
 - [ ] Change `epsilon` out for something like `math.nextfloat`
 - [ ] Fuzzy sets:
   - [ ] Figure out logic & arithmetic between such fuzzy sets
