@@ -2,7 +2,7 @@
 Python module supporting math intervals.
 Functions as an abstraction and superset of the range function.
 
-Many methods and examples herein are taken from (Interval Arithmetic&mdash;Wikipedia)[https://en.wikipedia.org/wiki/Interval_arithmetic].
+Many methods and examples herein are taken from [Interval Arithmetic&mdash;Wikipedia](https://en.wikipedia.org/wiki/Interval_arithmetic).
 
 
 ## Basic usage example
