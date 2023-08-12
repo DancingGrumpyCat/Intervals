@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Literal, Union
+import operator as op
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
@@ -123,6 +124,7 @@ class Interval:
         loc: IntervalType = self.lower_closure
         hic: IntervalType = self.upper_closure
         return (
+            f"{self}\n"
             f"Interval("
             f"lower_bound = {lo}, lower_closure = {loc}, "
             f"upper_bound = {hi}, upper_closure = {hic}"
@@ -143,6 +145,11 @@ class Interval:
         )
 
     def truncate(self, precision: int) -> Interval:
+        # Negative precisions round to increasing powers of 10;
+        # 0 precision is meaningless.
+        if precision == 0:
+            raise ValueError("precision cannot be exactly equal to 0")
+
         # floor and ceil with precision argument
         def _floor(_x: Number, _p: int) -> int:
             return round(_x - 0.5 * 10**-_p, _p)
@@ -174,24 +181,49 @@ class Interval:
         """
         if start is None:
             start = self.lower_bound
-        start %= step
+        elif start not in self:
+            start += self.lower_bound + start % step
         if step == 0:
             raise ValueError("step must be non-zero")
-        while start in self:
-            yield start
-            start += step
+        counter = 1
+        current: Number = start
+        while current in self:
+            yield current
+            current = start + counter * step
+            counter += 1
+
+    @staticmethod
+    def _invert(it: IntervalType) -> IntervalType:
+        if it == "closed":
+            return "open"
+        return "closed"
+
+    @staticmethod
+    def _x_div_0_is_inf(
+        x: Number, y: Number, fn: Callable[[Number, Number], Number]
+    ) -> Number:
+        def sign(x: Number) -> Literal[-1, 0, 1]:
+            return (x > 0) - (x < 0)
+
+        try:
+            return fn(x, y)
+        except ZeroDivisionError:
+            return _INF * sign(x)
 
     def __invert__(self) -> Interval:
-        def _invert(it: IntervalType) -> IntervalType:
-            if it == "closed":
-                return "open"
-            return "closed"
-
         return Interval(
             self.lower_bound,
             self.upper_bound,
-            lower_closure=_invert(self.lower_closure),
-            upper_closure=_invert(self.upper_closure),
+            lower_closure=Interval._invert(self.lower_closure),
+            upper_closure=Interval._invert(self.upper_closure),
+        )
+
+    def __neg__(self) -> Interval:
+        return Interval(
+            -self.lower_bound,
+            -self.upper_bound,
+            lower_closure=Interval._invert(self.lower_closure),
+            upper_closure=Interval._invert(self.upper_closure),
         )
 
     def __add__(self, value: Number) -> Interval:
@@ -202,6 +234,9 @@ class Interval:
             upper_closure=self.upper_closure,
         )
 
+    def __radd__(self, value: Number) -> Interval:
+        return self + value
+
     def __sub__(self, value: Number) -> Interval:
         return Interval(
             self.lower_bound - value,
@@ -209,6 +244,9 @@ class Interval:
             lower_closure=self.lower_closure,
             upper_closure=self.upper_closure,
         )
+
+    def __rsub__(self, value: Number) -> Interval:
+        return self - value
 
     def __mul__(self, value: Number) -> Interval:
         return Interval(
@@ -218,24 +256,43 @@ class Interval:
             upper_closure=self.upper_closure,
         )
 
+    def __rmul__(self, value: Number) -> Interval:
+        return self * value
+
     def __truediv__(self, value: Number) -> Interval:
         return Interval(
-            self.lower_bound / value,
-            self.upper_bound / value,
+            Interval._x_div_0_is_inf(self.lower_bound, value, op.truediv),
+            Interval._x_div_0_is_inf(self.upper_bound, value, op.truediv),
+            lower_closure=self.lower_closure,
+            upper_closure=self.upper_closure,
+        )
+
+    def __rtruediv__(self, value: Number) -> Interval:
+        return Interval(
+            Interval._x_div_0_is_inf(value, self.lower_bound, op.truediv),
+            Interval._x_div_0_is_inf(value, self.upper_bound, op.truediv),
             lower_closure=self.lower_closure,
             upper_closure=self.upper_closure,
         )
 
     def __floordiv__(self, value: Number) -> Interval:
         return Interval(
-            self.lower_bound // value,
-            self.upper_bound // value,
+            Interval._x_div_0_is_inf(self.lower_bound, value, op.floordiv),
+            Interval._x_div_0_is_inf(self.upper_bound, value, op.floordiv),
+            lower_closure=self.lower_closure,
+            upper_closure=self.upper_closure,
+        )
+
+    def __rfloordiv__(self, value: Number) -> Interval:
+        return Interval(
+            Interval._x_div_0_is_inf(value, self.upper_bound, op.floordiv),
+            Interval._x_div_0_is_inf(value, self.lower_bound, op.floordiv),
             lower_closure=self.lower_closure,
             upper_closure=self.upper_closure,
         )
 
     def intersects(self, other: Interval) -> bool:
-        return any(
+        return not any(
             (
                 (other.lower_bound > self.upper_bound),
                 (self.lower_bound > other.upper_bound),
@@ -243,7 +300,7 @@ class Interval:
         )
 
     def __and__(self, other: Interval) -> Interval:
-        if self.intersects(other):
+        if not self.intersects(other):
             return EMPTY_SET
         return Interval(
             max(self.lower_bound, other.lower_bound),
@@ -251,7 +308,7 @@ class Interval:
         )
 
     def __or__(self, other: Interval) -> Interval:
-        if self.intersects(other):
+        if not self.intersects(other):
             raise ValueError(
                 "intervals must intersect or be adjacent to create a union"
             )
