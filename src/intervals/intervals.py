@@ -57,9 +57,8 @@ class Interval:
     """
     ### Description
     An Interval has a start and end value, and two booleans indicating closed/open state
-    for each bound. The start value is the lower bound and the end value is the upper
-    bound. Each of `start` and `end` may be finite or infinite, with some restrictions
-    on which methods are then available to use.
+    for each bound. Each of `start` and `end` may be finite or infinite, with some rest-
+    rictions on which methods are then available to use.
     """
 
     ####################################### INIT #######################################
@@ -119,11 +118,10 @@ class Interval:
     ) -> Interval:
         """
         ### Description
-        An additional class method to initialize an Interval instance in "plus/minus"
-        style. Alternatively you can enter it as a string.
+        An additional initialization method in "plus/minus" style. Alternatively you can
+        enter it as a string.
 
-        The resulting interval is half-open (has a closed lower bound and an open
-        upper bound).
+        The output interval is half-open; it has a closed lower and an open upper bound.
 
         ### Example
         (More examples available in the README.)
@@ -148,7 +146,10 @@ class Interval:
 
     def as_plus_minus(self, *, precision: int = 3) -> str:
         """
-        Returns a string representing an interval in plus-minus form, for example
+        ### Description
+        Returns a string representing an interval in plus-minus form.
+
+        ### Example
         `[-1, 7] -> "3 ± 4"`. Loses information about whether the bounds are closed.
         """
         return (
@@ -248,10 +249,12 @@ class Interval:
     ) -> Iterator[float]:
         """
         ### Description
-        A generator function that, like Python's default `range`, yields values between
-        `start` and `stop`, with step `step`. Note that if the lower bound is
-        &minus;infinity, you must pass a `start` value and count downwards (with a
-        negative step value) instead of starting from &minus;infinity.
+        A generator. Like Python's default `range`, it yields values between `start` and
+        `stop`, adding `step` each time. Note that if the lower bound is &minus;&infin;,
+        you must pass the `start` which is normally optional, and the step value must be
+        negative, since you can't start counting from &minus;&infin;.
+
+        The method will raise a `ValueError` if step is zero.
         """
         if start is None:
             start = self.lower_bound
@@ -390,9 +393,9 @@ class Interval:
     ) -> Interval:
         """
         ### Description
-        Combines two intervals using an arbitrary binary function of type `Number ->
-        Number -> Number`. For small arithmetic expressions, the `operator` module may
-        be handy. Otherwise, a `lambda` expression is usually preferred.
+        Computes any arbitrary binary function, of type `Number -> Number -> Number`, on
+        the two input intervals. For small arithmetic expressions, the `operator` module
+        may be handy. Otherwise, a `lambda` expression is usually preferred.
         """
         x1, x2, y1, y2 = (
             self.lower_bound,
@@ -411,6 +414,7 @@ class Interval:
     @property
     def diameter(self) -> float:
         """
+        ### Description
         The positive difference between the apparent lower and upper bounds.
         """
         return self.upper_bound - self.lower_bound
@@ -418,9 +422,9 @@ class Interval:
     @property
     def interval_type(self) -> IntervalType:
         """
-        The type of interval can be `"closed"` (if both bounds are either closed or
-        infinite), `"open"` (if both bounds are open), or `"half-open"` (if neither of
-        the above is true).
+        ### Description
+        The type of interval can be `"closed"` (if both bounds are closed), `"open"` (if
+        both bounds are open), or `"half-open"` (if neither of the above is true).
         """
         if self.lower_closure == "closed" and self.upper_closure == "closed":
             return "closed"
@@ -431,8 +435,8 @@ class Interval:
     @property
     def midpoint(self) -> float:
         """
-        The arithmetic average of the two endpoints, treating them as if they were
-        closed.
+        ### Description
+        Returns the arithmetic average of the two bounds, treating each as closed.
         """
         return (self.lower_bound + self.upper_bound) / 2
 
