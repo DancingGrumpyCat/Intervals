@@ -1,5 +1,5 @@
 import pytest
-from intervals import Interval, Number, EMPTY_SET, UNIT, NEGATIVE_UNIT, UNIT_DISK
+from intervals import Interval, Number, empty_set, unit, negative_unit, unit_disk, utils
 
 
 # TODO: generate a few random intervals and test them
@@ -22,7 +22,7 @@ def test_str() -> None:
     assert str(y) == "[0, 5)"
     z = Interval(0, 5, lower_closure="open", upper_closure="open")
     assert str(z) == "(0, 5)"
-    assert str(EMPTY_SET) == "∅"
+    assert str(empty_set) == "∅"
 
 
 def test_repr() -> None:
@@ -51,7 +51,7 @@ def test_repr() -> None:
         "upper_bound = 5, upper_closure = open)"
     )
     assert (
-        repr(EMPTY_SET) == "∅\nInterval("
+        repr(empty_set) == "∅\nInterval("
         "lower_bound = 0, lower_closure = open, "
         "upper_bound = 0, upper_closure = open)"
     )
@@ -82,9 +82,9 @@ def test_truncate() -> None:
 
 
 def test_step() -> None:
-    assert list(NEGATIVE_UNIT.step(1 / 4)) == [-1.0, -0.75, -0.5, -0.25, 0.0]
-    assert list(UNIT.step(1 / 4)) == [0.0, 0.25, 0.5, 0.75, 1.0]
-    assert list(UNIT_DISK.step(1 / 2)) == [-1.0, -0.5, 0.0, 0.5, 1.0]
+    assert list(negative_unit.step(1 / 4)) == [-1.0, -0.75, -0.5, -0.25, 0.0]
+    assert list(unit.step(1 / 4)) == [0.0, 0.25, 0.5, 0.75, 1.0]
+    assert list(unit_disk.step(1 / 2)) == [-1.0, -0.5, 0.0, 0.5, 1.0]
 
 
 def test_math() -> None:
@@ -124,7 +124,7 @@ def test_binary_fn() -> None:
 
     weight: Interval = Interval.from_plus_minus(80, 0.5)
     height: Interval = Interval.from_plus_minus(1.79, 0.005)
-    bmi: Interval = weight.binary_fn(height, get_bmi)
+    bmi: Interval = utils.binary_fn(weight, height, get_bmi)
     assert str(bmi.truncate(3)) == "[24.673, 25.266)"
 
 

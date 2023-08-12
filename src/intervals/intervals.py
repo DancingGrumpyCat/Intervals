@@ -388,27 +388,6 @@ class Interval:
             upper_closure=max_upper_bounded.upper_closure,
         )
 
-    def binary_fn(
-        self, other: Interval, fn: Callable[[Number, Number], Number]
-    ) -> Interval:
-        """
-        ### Description
-        Computes any arbitrary binary function, of type `Number -> Number -> Number`, on
-        the two input intervals. For small arithmetic expressions, the `operator` module
-        may be handy. Otherwise, a `lambda` expression is usually preferred.
-        """
-        x1, x2, y1, y2 = (
-            self.lower_bound,
-            self.upper_bound,
-            other.lower_bound,
-            other.upper_bound,
-        )
-        possible_bounds: list[Number] = [fn(x1, y1), fn(x1, y2), fn(x2, y1), fn(x2, y2)]
-        return Interval(
-            min(possible_bounds),
-            max(possible_bounds),
-        )
-
     #################################### PROPERTIES ####################################
 
     @property

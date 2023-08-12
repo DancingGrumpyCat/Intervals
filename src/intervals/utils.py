@@ -1,6 +1,7 @@
 import random
 
 from intervals.intervals import Interval, Number
+from typing import Callable
 
 
 def clamp(value: Number, interval: Interval) -> Number:
@@ -15,6 +16,28 @@ def clamp(value: Number, interval: Interval) -> Number:
             "Magnitude should always be non-negative."
         )
     return min(interval.adjusted_upper_bound, max(interval.adjusted_lower_bound, value))
+
+
+def binary_fn(
+    x: Interval, y: Interval, fn: Callable[[Number, Number], Number]
+) -> Interval:
+    """
+    ### Description
+    Computes any arbitrary binary function, of type `Number -> Number -> Number`, on the
+    two input intervals. For small arithmetic expressions the `operator` module could be
+    handy. Otherwise, a `lambda` expression is usually preferred.
+    """
+    x1, x2, y1, y2 = (
+        x.lower_bound,
+        x.upper_bound,
+        y.lower_bound,
+        y.upper_bound,
+    )
+    possible_bounds: list[Number] = [fn(x1, y1), fn(x1, y2), fn(x2, y1), fn(x2, y2)]
+    return Interval(
+        min(possible_bounds),
+        max(possible_bounds),
+    )
 
 
 def rand_uniform(interval: Interval, *, values: int = 1) -> float | list[float]:

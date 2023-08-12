@@ -1,6 +1,6 @@
 import pytest
 from intervals import Interval, clamp, rand_uniform, lerp, invlerp
-from intervals import Number, Bounds, EMPTY_SET
+from intervals import Number, Bounds, empty_set
 
 x = Interval(0, 5)
 
@@ -27,7 +27,7 @@ def test_lerp_invlerp_inverses() -> None:
 # no value can be clamped to the empty set
 def test_clamp_fail() -> None:
     with pytest.raises(ValueError):
-        x1: Interval = EMPTY_SET
+        x1: Interval = empty_set
         clamp(3, x1)
 
 
@@ -35,5 +35,5 @@ def test_clamp_fail() -> None:
 # bound is undefined
 def test_invlerp_fail() -> None:
     with pytest.raises(ZeroDivisionError):
-        x1: Interval = EMPTY_SET
+        x1: Interval = empty_set
         invlerp(x1, 5)
