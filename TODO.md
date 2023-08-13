@@ -1,5 +1,8 @@
 - [ ] Add methods to shrink and expand (left, right, centered) intervals
 - [ ] Change `epsilon` out for something like `math.nextfloat`
+- [ ] Replace `from_plus_minus` to general `from_string` method
+  - [ ] Allows for `Interval.from_string("[0, 1)")` or
+  - [ ] Interval.from_string("2 pm 1") etc.
 - [ ] Fuzzy sets:
   - [ ] Figure out logic & arithmetic between such fuzzy sets
     - Source:

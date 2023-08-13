@@ -12,24 +12,24 @@ interval_1 = Interval(0, 5, lower_closure="open")
 interval_2 = Interval(3, 6, upper_closure="open")
 
 # METHODS & PROPERTIES
-str(interval_1) # 'Interval(0, 5]'
-list(interval_1.step(2, start=-1)) # [1, 3, 5]
-list(interval_1.step(2)) # [2, 4]
-interval_1.interval_type # 'half-open'
-interval_1.diameter # 5
-4 in interval_1 # True
-0 in interval_1 # False
-interval_1 + 2 # (2, 7]
-interval_1 * -1 # [-5, 0) # NOTE the closed and opened bounds swapped order too
-interval_1 & interval_2 # [3, 5]
-interval_1 | interval_2 # (0, 6)
+str(interval_1)  # 'Interval(0, 5]'
+list(interval_1.step(2, start=-1))  # [1, 3, 5]
+list(interval_1.step(2))  # [2, 4]
+interval_1.interval_type  # 'half-open'
+interval_1.diameter  # 5
+4 in interval_1  # True
+0 in interval_1  # False
+interval_1 + 2  # (2, 7]
+interval_1 * -1  # [-5, 0)  # NOTE the closed and opened bounds swapped order too
+interval_1 & interval_2  # [3, 5]
+interval_1 | interval_2  # (0, 6)
 ```
 
 
 ## Plus-Minus form
 ```python
 interval_3 = Interval.from_plus_minus(2, 1.2)
-str(interval_3) # 'Interval[0.8, 3.2]'
+str(interval_3)  # 'Interval[0.8, 3.2]'
 ```
 The diameter of such an interval will be double its plus/minus value.
 
@@ -55,7 +55,7 @@ you can now write
 ```
 and you can do a lot more, like floating point values:
 ```python
-tau = 6.283_185_307
+from math import tau
 [x**2 for x in Interval(-tau, tau).step(tau / 4)]
 ```
 
@@ -63,8 +63,8 @@ tau = 6.283_185_307
 Use the `binary_fn` method.
 
 ```python
->>> weight = Interval.from_plus_minus(80, 0.5) # accurate to the nearest kg
->>> height = Interval.from_plus_minus(1.79, 0.005) # accurate to the nearest cm
+>>> weight = Interval.from_plus_minus(80, 0.5)  # accurate to the nearest kg
+>>> height = Interval.from_plus_minus(1.79, 0.005)  # accurate to the nearest cm
 >>> bmi = weight.binary_fn(height, lambda x, y: x / y**2)
 >>> bmi.truncate(3)
 [24.673, 25.266]
@@ -87,9 +87,8 @@ integers = Interval(-inf, +inf)
 
 ### Using `itertools`
 
-The following examples assume `*` is imported from `itertools`.
-
 ```python
+>>> from itertools import islice, takewhile
 >>> interval_4 = Interval(1, float("inf"))
 >>> n_1mod4 = interval_4.step(4)
 ```
