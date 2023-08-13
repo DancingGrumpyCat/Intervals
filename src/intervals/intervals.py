@@ -217,6 +217,25 @@ class Interval:
             current = start + counter * step
             counter += 1
 
+    def steps(self, subdivisions: Number) -> Iterator[Number]:
+        """
+        ### Description
+        Creates an iterator out of uniform subdivisions of the interval. If subdivisions
+        is not an integer, the last subdivision will be truncated appropriately.
+
+        The interval must have finite diameter.
+        """
+        if self.diameter == _INF:
+            raise ValueError("cannot subdivide an infinite interval")
+        if subdivisions < 1:
+            raise ValueError("number of subdivisions must be 1 or greater")
+        subdivision_width = self.diameter / subdivisions
+        counter = 1
+        subdivision = self.lower_bound
+        while subdivision <= self.upper_bound:
+            yield subdivision
+            subdivision = self.lower_bound + counter * subdivision_width
+            counter += 1
     def intersects(self, other: Interval) -> bool:
         return (
             other.lower_bound <= self.upper_bound
