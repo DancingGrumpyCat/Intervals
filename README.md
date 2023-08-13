@@ -49,9 +49,9 @@ False
 ## Plus-Minus form
 
 ```pycon
->>> interval_3 = Interval.from_plus_minus(2, 1.2)
+>>> interval_3 = Interval.from_string("2 +- 1.2")
 >>> print(interval_3)
-[0.8, 3.2]
+(0.8, 3.2]
 ```
 
 The diameter of such an interval will be double its plus/minus value.
@@ -59,12 +59,12 @@ The diameter of such an interval will be double its plus/minus value.
 The following (all spaces are removed, so others are also possible) are also equivalent:
 
 ```python
-Interval.from_plus_minus(2, 1.2)
-Interval.from_plus_minus("2 +- 1.2")
-Interval.from_plus_minus("2 +/- 1.2")
-Interval.from_plus_minus("2 ± 1.2")
-Interval.from_plus_minus("2 pm 1.2")
-Interval.from_plus_minus("2 p/m 1.2")
+Interval.from_string("2 pm 1.2")
+Interval.from_string("2 +- 1.2")
+Interval.from_string("2 +/- 1.2")
+Interval.from_string("2 ± 1.2")
+Interval.from_string("2 pm 1.2")
+Interval.from_string("2 p/m 1.2")
 ```
 
 ## How it can replace `range`
@@ -99,8 +99,8 @@ and you can do a lot more, like floating point values:
 Use the `binary_fn` method.
 
 ```python
->>> weight = Interval.from_plus_minus(80, 0.5)  # accurate to the nearest kg
->>> height = Interval.from_plus_minus(1.79, 0.005)  # accurate to the nearest cm
+>>> weight = Interval.from_string("80 +- 0.5")  # accurate to the nearest kg
+>>> height = Interval.from_string("1.79 +- 0.005")  # accurate to the nearest cm
 >>> bmi = weight.binary_fn(height, lambda x, y: x / y**2)
 >>> bmi.truncate(3)
 [24.673, 25.266]

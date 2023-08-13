@@ -134,17 +134,16 @@ def test_infinite() -> None:
 
 # real world example
 def test_binary_fn() -> None:
-    height: Interval = Interval.from_plus_minus(1.79, 0.005)  # meters
-    weight: Interval = Interval.from_plus_minus(80, 0.5)  # kilograms
+    height: Interval = Interval.from_string("1.79 +- 0.005")  # meters
+    weight: Interval = Interval.from_string("80 +- 0.5")  # kilograms
     bmi: Interval = weight / height**2
     assert str(bmi.truncate(3)) == "[24.673, 25.266)"
 
 
-# from_plus_minus and as_plus_minus are conceptually inverses
-def test_to_from_plusminus() -> None:
+# from_string undoes as_plus_minus (but not necessarily the other way around)
+def test_as_plus_minus() -> None:
     assert (
-        str(Interval.from_plus_minus(string=x.as_plus_minus(precision=3)))
-        == "[0.0, 5.0)"
+        str(Interval.from_string(string=x.as_plus_minus(precision=3))) == "[0.0, 5.0)"
     )
 
 

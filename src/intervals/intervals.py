@@ -125,34 +125,47 @@ class Interval:
         self.adjusted_upper_bound = bounds.adjusted_upper_bound
 
     @classmethod
-    def from_plus_minus(
-        cls, center: Number = 0, plusminus: Number = 0, *, string: str = ""
-    ) -> Interval:
-        """
-        ### Description
-        An additional initialization method in "plus/minus" style. Alternatively you can
-        enter it as a string.
+    def from_string(cls, string: str) -> Interval:
+        string = string.lower().strip()
+        # Normal form
+        if (
+            string.startswith(("[", "("))
+            and string.endswith((")", "]"))
+            and ("," in string or ".." in string)
+        ):
+            lower_closure: IntervalType = "open" if string.startswith("(") else "closed"
+            upper_closure: IntervalType = "open" if string.endswith(")") else "closed"
+            string = (
+                string.replace("[", "")
+                .replace("(", "")
+                .replace(")", "")
+                .replace("]", "")
+                .replace("..", ",")
+            )
+            string = string.split(",")
+            return Interval(
+                float(string[0]),
+                float(string[1]),
+                lower_closure=lower_closure,
+                upper_closure=upper_closure,
+            )
 
-        The output interval is half-open; it has a closed lower and an open upper bound.
-
-        ### Example
-        (More examples available in the README.)
-        ```py
-        >>> Interval.from_plus_minus(4, 0.5)
-        # [3.5, 4.5)
-        ```
-        """
-        if not (center or plusminus):
-            if not string:
-                raise ValueError("no values were passed")
+        # Plus/Minus form
+        if any(separator in string for separator in ("pm", "p/m", "+-", "+/-", "±")):
             string = (
                 string.replace(" ", "")
-                .replace("/", "")
-                .replace("±", "+-")
-                .replace("pm", "+-")
+                .replace("±", "pm")
+                .replace("+-", "pm")
+                .replace("+/-", "pm")
+                .replace("p/m", "pm")
             )
-            center, plusminus = map(float, string.split("+-"))
-        return Interval(center - plusminus, center + plusminus, upper_closure="open")
+            center, plusminus = map(float, string.split("pm"))
+            print(f"<debug> {center} ± {plusminus}")
+            return Interval(
+                center - plusminus, center + plusminus, upper_closure="open"
+            )
+
+        return NotImplemented
 
     #################################### PROPERTIES ####################################
 
