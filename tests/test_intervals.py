@@ -85,13 +85,28 @@ def test_step() -> None:
     assert list(NEGATIVE_UNIT.step(1 / 4)) == [-1.0, -0.75, -0.5, -0.25, 0.0]
     assert list(UNIT.step(1 / 4)) == [0.0, 0.25, 0.5, 0.75, 1.0]
     assert list(UNIT_DISK.step(1 / 2)) == [-1.0, -0.5, 0.0, 0.5, 1.0]
+    assert list(x.step(-1, start=5)) == [5, 4, 3, 2, 1, 0]
+    assert list(x.step(2)) == [0, 2, 4]
+
+
+def test_steps() -> None:
+    assert list(f"{x:.6f}" for x in UNIT.steps(7)) == [
+        "0.000000",
+        "0.142857",
+        "0.285714",
+        "0.428571",
+        "0.571429",
+        "0.714286",
+        "0.857143",
+        "1.000000",
+    ]
 
 
 def test_math() -> None:
     assert x + 2 == Interval(2, 7)
     assert x - 2 == Interval(-2, 3)
     assert x * 2 == Interval(0, 10)
-    assert x * -1 == Interval(-5, 0)
+    assert x * -1 == -x == Interval(-5, 0)
     assert x / 2 == Interval(0.0, 2.5)
     assert x // 2 == Interval(0, 2)
 
