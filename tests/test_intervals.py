@@ -106,7 +106,7 @@ def test_math() -> None:
     assert x + 2 == Interval(2, 7)
     assert x - 2 == Interval(-2, 3)
     assert x * 2 == Interval(0, 10)
-    assert x * -1 == -x == Interval(-5, 0)
+    assert x * -1 == ~(-x) == Interval(-5, 0)
     assert x / 2 == Interval(0.0, 2.5)
     assert x // 2 == Interval(0, 2)
 

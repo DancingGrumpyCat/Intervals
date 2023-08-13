@@ -6,10 +6,11 @@ from __future__ import annotations
 
 import operator as op
 from math import copysign
-from typing import TYPE_CHECKING, Literal, Union
+from typing import TYPE_CHECKING, Any, Literal, Union
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterator
+    from types import NotImplementedType
 
 ########################################################################################
 #                                       CONSTANTS                                      #
@@ -331,6 +332,63 @@ class Interval:
             other.lower_closure,
             other.upper_closure,
         )
+
+    # ---------------------------------- COMPARISON ---------------------------------- #
+
+    # NOTE that between two Intervals, >= and > are the same, and <= and < are the same.
+
+    @staticmethod
+    def _triangle_area(x: float) -> float:
+        """
+        Area of a right isosceles triangle with base and height x, or 0 if area would be
+        less than zero.
+        """
+        return x**2 / 2 if x > 0 else 0
+
+    def __lt__(self, other: Interval) -> bool | float:
+        def _lt_helper(interval: Interval, value: Number) -> bool | float:
+            def _invlerp(interval: Interval, value: Number) -> Number:
+                return (value - interval.adjusted_lower_bound) / interval.diameter
+
+            if value in interval:
+                return _invlerp(interval, value)
+            if value >= interval.lower_bound:
+                return True
+            return False
+
+        if isinstance(self, (float, int)):
+            out = _lt_helper(other, self)
+        elif self.diameter == 0:
+            out = _lt_helper(other, self.lower_bound)
+        if isinstance(other, (float, int)):
+            out = _lt_helper(self, other)
+        elif other.diameter == 0:
+            out = _lt_helper(self, other.lower_bound)
+
+        else:
+            out = (
+                0
+                + Interval._triangle_area(other.upper_bound - self.lower_bound)
+                - Interval._triangle_area(other.lower_bound - self.lower_bound)
+                - Interval._triangle_area(other.upper_bound - self.upper_bound)
+                + Interval._triangle_area(other.lower_bound - self.upper_bound)
+            ) / (self.diameter * other.diameter)
+
+        if 0 < out < 1:
+            return out
+        return bool(out)
+
+    def __le__(self, _: Any) -> NotImplementedType:
+        return NotImplemented
+
+    def __gt__(self, other: Interval) -> bool | float:
+        out = 1 - (self < other)
+        if 0 < out < 1:
+            return out
+        return bool(out)
+
+    def __ge__(self, _: Any) -> NotImplementedType:
+        return NotImplemented
 
     def __invert__(self) -> Interval:
         return Interval(
