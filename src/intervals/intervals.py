@@ -5,12 +5,12 @@
 from __future__ import annotations
 
 import operator as op
+import warnings
 from math import copysign
-from typing import TYPE_CHECKING, Any, Literal, Union
+from typing import TYPE_CHECKING, Literal, Union
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterator
-    from types import NotImplementedType
 
 ########################################################################################
 #                                       CONSTANTS                                      #
@@ -337,6 +337,39 @@ class Interval:
 
     # NOTE that between two Intervals, >= and > are the same, and <= and < are the same.
 
+    # # How to calculate the probability of *A* < *B*.
+    # First, draw A and B as independent intervals on the x and y axes. There is a rect-
+    # angle where they intersect. Let's call it AxB.The line y = x bounds ShadedArea be-
+    # low. The triangle JKN----where ShadedArea intersects AxB----fills some proportion
+    # of AxB. That proportion is the probability we seek.
+    #
+    # We can calculate that by starting with triangle PLI, and subtracting triangles OLK
+    # and MJI. They are right isosceles triangles----the points I J K L all lie on y=x.
+    #
+    # We calculate the areas of the triangles as 0 if they're negative so that we don't
+    # subtract when we don't want to. We then add back triangle JKN, calculated the same
+    # way (depending on its orientation, it can be 0).
+    #
+    #
+    # Link: https://www.desmos.com/calculator/iusjba8eis
+    #
+    #
+    #     y············ShadedArea := y < x
+    #     |··+*B*+····/
+    #     |··|···|···/
+    #     |··|···|··/
+    #     |--P---O-L---+
+    #     |··|···|/    |
+    #    *A*·|···K    *A*
+    #     |··|··/|     |
+    #     |--M-J-N-----+
+    #     |··|/  |
+    #     |··I   |
+    #     | /|   |
+    #     0--|-B-|----------x
+    #
+    # - - - - - - - - - - - - - - - - - - - -
+
     @staticmethod
     def _triangle_area(x: float) -> float:
         """
@@ -345,9 +378,9 @@ class Interval:
         """
         return x**2 / 2 if x > 0 else 0
 
-    def __lt__(self, other: Interval) -> bool | float:
-        def _lt_helper(interval: Interval, value: Number) -> bool | float:
-            def _invlerp(interval: Interval, value: Number) -> Number:
+    def __lt__(self, other: object) -> bool | float:
+        def _lt_helper(interval: Interval, value: object) -> bool | float:
+            def _invlerp(interval: Interval, value: object) -> Number:
                 return (value - interval.adjusted_lower_bound) / interval.diameter
 
             if value in interval:
@@ -356,14 +389,15 @@ class Interval:
                 return True
             return False
 
+        out: bool | float
         if isinstance(self, (float, int)):
-            out = _lt_helper(other, self)
+            out = _lt_helper(interval=other, value=self)
         elif self.diameter == 0:
-            out = _lt_helper(other, self.lower_bound)
+            out = _lt_helper(interval=other, value=self.lower_bound)
         if isinstance(other, (float, int)):
-            out = _lt_helper(self, other)
+            out = _lt_helper(interval=self, value=other)
         elif other.diameter == 0:
-            out = _lt_helper(self, other.lower_bound)
+            out = _lt_helper(interval=self, value=other.lower_bound)
 
         else:
             out = (
@@ -378,17 +412,29 @@ class Interval:
             return out
         return bool(out)
 
-    def __le__(self, _: Any) -> NotImplementedType:
-        return NotImplemented
-
-    def __gt__(self, other: Interval) -> bool | float:
+    def __gt__(self, other: object) -> bool | float:
         out = 1 - (self < other)
         if 0 < out < 1:
             return out
         return bool(out)
 
-    def __ge__(self, _: Any) -> NotImplementedType:
-        return NotImplemented
+    def __le__(self, other: object) -> bool | float:
+        warnings.warn(
+            "A <= B is the same as A < B between intervals and intervals, and between "
+            "intervals and numbers. Use < instead.",
+            SyntaxWarning,
+            stacklevel=2,
+        )
+        return self < other
+
+    def __ge__(self, other: object) -> bool | float:
+        warnings.warn(
+            "A >= B is the same as A > B between intervals and intervals, and between "
+            "intervals and numbers. Use > instead.",
+            SyntaxWarning,
+            stacklevel=2,
+        )
+        return self > other
 
     def __invert__(self) -> Interval:
         return Interval(
@@ -409,43 +455,74 @@ class Interval:
     def __contains__(self, value: Number) -> bool:
         return self.adjusted_lower_bound <= value <= self.adjusted_upper_bound
 
-    def __add__(self, value: Number) -> Interval:
+    @staticmethod
+    def _binary_fn(
+        x: Interval, y: Interval, fn: Callable[[Number, Number], Number]
+    ) -> Interval:
+        possible_bounds: list[Number] = [
+            fn(x.lower_bound, y.lower_bound),
+            fn(x.lower_bound, y.upper_bound),
+            fn(x.upper_bound, y.lower_bound),
+            fn(x.upper_bound, y.upper_bound),
+        ]
         return Interval(
-            self.lower_bound + value,
-            self.upper_bound + value,
-            lower_closure=self.lower_closure,
-            upper_closure=self.upper_closure,
+            min(possible_bounds),
+            max(possible_bounds),
         )
+
+    def __add__(self, other: Number | Interval) -> Interval:
+        if isinstance(other, Number):
+            return Interval(
+                self.lower_bound + other,
+                self.upper_bound + other,
+                lower_closure=self.lower_closure,
+                upper_closure=self.upper_closure,
+            )
+        if isinstance(other, Interval):
+            return Interval._binary_fn(self, other, lambda x, y: x + y)
+        raise TypeError("input must be Interval and Number, or Interval and Interval")
 
     __radd__ = __add__
 
-    def __sub__(self, value: Number) -> Interval:
-        return Interval(
-            self.lower_bound - value,
-            self.upper_bound - value,
-            lower_closure=self.lower_closure,
-            upper_closure=self.upper_closure,
-        )
+    def __sub__(self, other: Number | Interval) -> Interval:
+        if isinstance(other, Number):
+            return Interval(
+                self.lower_bound - other,
+                self.upper_bound - other,
+                lower_closure=self.lower_closure,
+                upper_closure=self.upper_closure,
+            )
+        if isinstance(other, Interval):
+            return Interval._binary_fn(self, other, lambda x, y: x - y)
+        raise TypeError("input must be Interval and Number, or Interval and Interval")
 
     __rsub__ = __sub__
 
-    def __mul__(self, value: Number) -> Interval:
-        return Interval(
-            self.lower_bound * value,
-            self.upper_bound * value,
-            lower_closure=self.lower_closure,
-            upper_closure=self.upper_closure,
-        )
+    def __mul__(self, other: Number | Interval) -> Interval:
+        if isinstance(other, Number):
+            return Interval(
+                self.lower_bound * other,
+                self.upper_bound * other,
+                lower_closure=self.lower_closure,
+                upper_closure=self.upper_closure,
+            )
+        if isinstance(other, Interval):
+            return Interval._binary_fn(self, other, lambda x, y: x * y)
+        raise TypeError("input must be Interval and Number, or Interval and Interval")
 
     __rmul__ = __mul__
 
-    def __truediv__(self, value: Number) -> Interval:
-        return Interval(
-            Interval._x_div_0_is_inf(self.lower_bound, value, op.truediv),
-            Interval._x_div_0_is_inf(self.upper_bound, value, op.truediv),
-            lower_closure=self.lower_closure,
-            upper_closure=self.upper_closure,
-        )
+    def __truediv__(self, other: Number | Interval) -> Interval:
+        if isinstance(other, Number):
+            return Interval(
+                self.lower_bound / other,
+                self.upper_bound / other,
+                lower_closure=self.lower_closure,
+                upper_closure=self.upper_closure,
+            )
+        if isinstance(other, Interval):
+            return Interval._binary_fn(self, other, lambda x, y: x / y)
+        raise TypeError("input must be Interval and Number, or Interval and Interval")
 
     def __rtruediv__(self, value: Number) -> Interval:
         return Interval(
@@ -455,18 +532,32 @@ class Interval:
             upper_closure=self.upper_closure,
         )
 
-    def __floordiv__(self, value: Number) -> Interval:
-        return Interval(
-            Interval._x_div_0_is_inf(self.lower_bound, value, op.floordiv),
-            Interval._x_div_0_is_inf(self.upper_bound, value, op.floordiv),
-            lower_closure=self.lower_closure,
-            upper_closure=self.upper_closure,
-        )
+    def __floordiv__(self, other: Number | Interval) -> Interval:
+        if isinstance(other, Number):
+            return Interval(
+                self.lower_bound // other,
+                self.upper_bound // other,
+                lower_closure=self.lower_closure,
+                upper_closure=self.upper_closure,
+            )
+        if isinstance(other, Interval):
+            return Interval._binary_fn(self, other, lambda x, y: x // y)
+        raise TypeError("input must be Interval and Number, or Interval and Interval")
 
     def __rfloordiv__(self, value: Number) -> Interval:
         return Interval(
             Interval._x_div_0_is_inf(value, self.upper_bound, op.floordiv),
             Interval._x_div_0_is_inf(value, self.lower_bound, op.floordiv),
+            lower_closure=self.lower_closure,
+            upper_closure=self.upper_closure,
+        )
+
+    def __pow__(self, exponent: int) -> Interval:
+        if not isinstance(exponent, int):
+            raise TypeError("exponent must be an integer")
+        return Interval(
+            self.lower_bound**exponent,
+            self.upper_bound**exponent,
             lower_closure=self.lower_closure,
             upper_closure=self.upper_closure,
         )

@@ -134,12 +134,9 @@ def test_infinite() -> None:
 
 # real world example
 def test_binary_fn() -> None:
-    def get_bmi(height: Number, weight: Number) -> Number:
-        return height / weight**2
-
-    weight: Interval = Interval.from_plus_minus(80, 0.5)
-    height: Interval = Interval.from_plus_minus(1.79, 0.005)
-    bmi: Interval = utils.binary_fn(weight, height, get_bmi)
+    height: Interval = Interval.from_plus_minus(1.79, 0.005)  # meters
+    weight: Interval = Interval.from_plus_minus(80, 0.5)  # kilograms
+    bmi: Interval = weight / height**2
     assert str(bmi.truncate(3)) == "[24.673, 25.266)"
 
 
