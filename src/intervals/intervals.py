@@ -200,26 +200,41 @@ class Interval:
             f"{round(self.upper_bound - self.midpoint, precision)}"
         )
 
-    def step(
-        self,
-        step: float,
-        start: float | None = None,
-    ) -> Iterator[float]:
+    def step(self, step: float, /, *, start: float | None = None) -> Iterator[float]:
         """
         ### Description
-        A generator. Like Python's default `range`, it yields values between `start` and
-        `stop`, adding `step` each time. Note that if the lower bound is &minus;&infin;,
-        you must pass the `start` which is normally optional, and the step value must be
-        negative, since you can't start counting from &minus;&infin;.
+        Returns an iterator that yields values starting from `start` or the lower bound,
+        adding `step` each time. Step may be negative. Stops yielding before the values
+        exceed the bounds in either direction.
 
-        The method will raise a `ValueError` if step is zero.
+        The function attempts once to step into the interval, if the membership check is
+        false beforehand.
+
+        If the lower bound is infinite, start defaults to the upper bound instead, so if
+        the upper bound is also infinite, a ValueError is raised.
         """
-        if start is None:
-            start = self.lower_bound
-        if start not in self:
-            start = self.lower_bound + start % step
+
         if step == 0:
             raise ValueError("step must be non-zero")
+
+        if self.lower_bound == -_INF:
+            if start is None:
+                start = self.upper_bound
+            if step > 0:
+                raise ValueError(
+                    "if the lower bound is infinite, step must be negative"
+                )
+            if self.upper_bound == _INF:
+                raise ValueError("at least one bound must be finite")
+
+        if start is None:
+            start = self.lower_bound
+
+        if start not in self:
+            start += step
+            if start not in self:
+                raise ValueError("start too far away from interval")
+
         counter = 1
         current: Number = start
         while current in self:
