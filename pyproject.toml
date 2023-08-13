@@ -25,6 +25,7 @@ select = [
     "BLE",
     "C",
     "E",
+    "ERA",
     "F",
     "FBT",
     "I",
