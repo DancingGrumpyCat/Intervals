@@ -1,6 +1,6 @@
 from collections.abc import Iterator
 
-from intervals import Interval
+from intervals.intervals import Interval
 
 _INF = float("inf")
 

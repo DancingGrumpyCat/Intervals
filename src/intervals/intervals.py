@@ -161,9 +161,9 @@ class Interval:
         The type of interval can be `"closed"` (if both bounds are closed), `"open"` (if
         both bounds are open), or `"half-open"` (if neither of the above is true).
         """
-        if self.lower_closure == "closed" and self.upper_closure == "closed":
+        if self.lower_closure == self.upper_closure == "closed":
             return "closed"
-        if self.lower_closure == "open" and self.upper_closure == "open":
+        if self.lower_closure == self.upper_closure == "open":
             return "open"
         return "half-open"
 
@@ -236,7 +236,12 @@ class Interval:
             yield subdivision
             subdivision = self.lower_bound + counter * subdivision_width
             counter += 1
+
     def intersects(self, other: Interval) -> bool:
+        """
+        ### Description
+        Returns `True` if there are any values present in both intervals.
+        """
         return (
             other.lower_bound <= self.upper_bound
             and self.lower_bound <= other.upper_bound
@@ -251,13 +256,17 @@ class Interval:
         positive or negative number.
         """
         return Interval(
-            self.lower_bound + amount,
             self.lower_bound - amount,
+            self.upper_bound + amount,
             lower_closure=self.lower_closure,
             upper_closure=self.upper_closure,
         )
 
     def truncate(self, precision: int) -> Interval:
+        """
+        ### Description
+        Rounds the lower bound down and the upper bound up, to the provided precision.
+        """
         # Negative precisions round to increasing powers of 10;
         # 0 precision is meaningless.
         if precision == 0:
@@ -270,10 +279,6 @@ class Interval:
         def _ceil(_x: Number, _p: int) -> float:
             return float(round(_x + 0.5 * 10**-_p, _p))
 
-        # The lower bound and upper bound must be lowered and raised respectively,
-        # expanding the interval, because the output interval needs to be a (non-strict)
-        # superset of the input interval.
-        # Its lower and upper bounds half-close because it's being truncated.
         return Interval(
             _floor(self.lower_bound, _p=precision),
             _ceil(self.upper_bound, _p=precision),
