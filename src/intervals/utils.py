@@ -1,7 +1,7 @@
 import random
+from typing import Callable
 
 from intervals.intervals import Interval, Number
-from typing import Callable
 
 
 def clamp(value: Number, interval: Interval) -> Number:
@@ -40,7 +40,7 @@ def binary_fn(
     )
 
 
-def rand_uniform(interval: Interval, *, values: int = 1) -> float | list[float]:
+def rand_uniform(interval: Interval, *, values: int = 1) -> list[float]:
     """
     Return a random float within finite interval.
     """
@@ -52,8 +52,6 @@ def rand_uniform(interval: Interval, *, values: int = 1) -> float | list[float]:
     def f(i: Interval) -> float:
         return random.random() * i.diameter + i.lower_bound
 
-    if values == 1:
-        return f(interval)
     return [f(interval) for _ in range(values)]
 
 
@@ -61,8 +59,8 @@ def rand_interval(
     lower_bound_interval: Interval, upper_bound_interval: Interval
 ) -> Interval:
     return Interval(
-        rand_uniform(lower_bound_interval),
-        rand_uniform(upper_bound_interval),
+        rand_uniform(lower_bound_interval)[0],
+        rand_uniform(upper_bound_interval)[0],
     )
 
 

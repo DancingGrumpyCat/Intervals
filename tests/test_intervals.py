@@ -1,5 +1,5 @@
 import pytest
-from intervals import Interval, Number, empty_set, unit, negative_unit, unit_disk, utils
+from intervals import Interval, Number, EMPTY_SET, UNIT, NEGATIVE_UNIT, UNIT_DISK, utils
 
 
 # TODO: generate a few random intervals and test them
@@ -22,38 +22,38 @@ def test_str() -> None:
     assert str(y) == "[0, 5)"
     z = Interval(0, 5, lower_closure="open", upper_closure="open")
     assert str(z) == "(0, 5)"
-    assert str(empty_set) == "∅"
+    assert str(EMPTY_SET) == "∅"
 
 
 def test_repr() -> None:
     w = Interval(0, 5, lower_closure="closed", upper_closure="closed")
     assert (
-        repr(w) == "[0, 5]\nInterval("
-        "lower_bound = 0, lower_closure = closed, "
-        "upper_bound = 5, upper_closure = closed)"
+        repr(w) == "Interval("
+        "lower_bound=0, upper_bound=5, "
+        "lower_closure=closed, upper_closure=closed)"
     )
     x = Interval(0, 5, lower_closure="open", upper_closure="closed")
     assert (
-        repr(x) == "(0, 5]\nInterval("
-        "lower_bound = 0, lower_closure = open, "
-        "upper_bound = 5, upper_closure = closed)"
+        repr(x) == "Interval("
+        "lower_bound=0, upper_bound=5, "
+        "lower_closure=open, upper_closure=closed)"
     )
     y = Interval(0, 5, lower_closure="closed", upper_closure="open")
     assert (
-        repr(y) == "[0, 5)\nInterval("
-        "lower_bound = 0, lower_closure = closed, "
-        "upper_bound = 5, upper_closure = open)"
+        repr(y) == "Interval("
+        "lower_bound=0, upper_bound=5, "
+        "lower_closure=closed, upper_closure=open)"
     )
     z = Interval(0, 5, lower_closure="open", upper_closure="open")
     assert (
-        repr(z) == "(0, 5)\nInterval("
-        "lower_bound = 0, lower_closure = open, "
-        "upper_bound = 5, upper_closure = open)"
+        repr(z) == "Interval("
+        "lower_bound=0, upper_bound=5, "
+        "lower_closure=open, upper_closure=open)"
     )
     assert (
-        repr(empty_set) == "∅\nInterval("
-        "lower_bound = 0, lower_closure = open, "
-        "upper_bound = 0, upper_closure = open)"
+        repr(EMPTY_SET) == "Interval("
+        "lower_bound=0, upper_bound=0, "
+        "lower_closure=open, upper_closure=open)"
     )
 
 
@@ -82,9 +82,9 @@ def test_truncate() -> None:
 
 
 def test_step() -> None:
-    assert list(negative_unit.step(1 / 4)) == [-1.0, -0.75, -0.5, -0.25, 0.0]
-    assert list(unit.step(1 / 4)) == [0.0, 0.25, 0.5, 0.75, 1.0]
-    assert list(unit_disk.step(1 / 2)) == [-1.0, -0.5, 0.0, 0.5, 1.0]
+    assert list(NEGATIVE_UNIT.step(1 / 4)) == [-1.0, -0.75, -0.5, -0.25, 0.0]
+    assert list(UNIT.step(1 / 4)) == [0.0, 0.25, 0.5, 0.75, 1.0]
+    assert list(UNIT_DISK.step(1 / 2)) == [-1.0, -0.5, 0.0, 0.5, 1.0]
 
 
 def test_math() -> None:
