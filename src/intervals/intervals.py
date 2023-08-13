@@ -81,7 +81,7 @@ class Interval:
         upper_bound: Number,
         /,
         *,
-        lower_closure: IntervalType = "closed",
+        lower_closure: IntervalType = "open",
         upper_closure: IntervalType = "closed",
     ) -> None:
         # Initialize bounds
