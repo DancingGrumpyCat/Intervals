@@ -379,22 +379,23 @@ class Interval:
         return x**2 / 2 if x > 0 else 0
 
     def __lt__(self, other: object) -> bool | float:
-        def _lt_helper(interval: Interval, value: object) -> bool | float:
-            def _invlerp(interval: Interval, value: object) -> Number:
+        if not isinstance(other, (Interval, float, int)):
+            return NotImplemented
+
+        def _lt_helper(interval: Interval, value: Number) -> bool | float:
+            def _invlerp(interval: Interval, value: Number) -> Number:
                 return (value - interval.adjusted_lower_bound) / interval.diameter
 
             if value in interval:
                 return _invlerp(interval, value)
-            if value >= interval.lower_bound:
-                return True
-            return False
+            return value >= interval.lower_bound
 
         out: bool | float
-        if isinstance(self, (float, int)):
-            out = _lt_helper(interval=other, value=self)
-        elif self.diameter == 0:
+        if self.diameter == 0:
+            if not isinstance(other, Interval):
+                return NotImplemented
             out = _lt_helper(interval=other, value=self.lower_bound)
-        if isinstance(other, (float, int)):
+        elif isinstance(other, (float, int)):
             out = _lt_helper(interval=self, value=other)
         elif other.diameter == 0:
             out = _lt_helper(interval=self, value=other.lower_bound)
@@ -471,7 +472,7 @@ class Interval:
         )
 
     def __add__(self, other: Number | Interval) -> Interval:
-        if isinstance(other, Number):
+        if isinstance(other, (float, int)):
             return Interval(
                 self.lower_bound + other,
                 self.upper_bound + other,
@@ -485,7 +486,7 @@ class Interval:
     __radd__ = __add__
 
     def __sub__(self, other: Number | Interval) -> Interval:
-        if isinstance(other, Number):
+        if isinstance(other, (float, int)):
             return Interval(
                 self.lower_bound - other,
                 self.upper_bound - other,
@@ -499,7 +500,7 @@ class Interval:
     __rsub__ = __sub__
 
     def __mul__(self, other: Number | Interval) -> Interval:
-        if isinstance(other, Number):
+        if isinstance(other, (float, int)):
             return Interval(
                 self.lower_bound * other,
                 self.upper_bound * other,
@@ -513,7 +514,7 @@ class Interval:
     __rmul__ = __mul__
 
     def __truediv__(self, other: Number | Interval) -> Interval:
-        if isinstance(other, Number):
+        if isinstance(other, (float, int)):
             return Interval(
                 self.lower_bound / other,
                 self.upper_bound / other,
@@ -533,7 +534,7 @@ class Interval:
         )
 
     def __floordiv__(self, other: Number | Interval) -> Interval:
-        if isinstance(other, Number):
+        if isinstance(other, (float, int)):
             return Interval(
                 self.lower_bound // other,
                 self.upper_bound // other,
