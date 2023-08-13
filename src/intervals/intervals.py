@@ -1,3 +1,7 @@
+########################################################################################
+#                                        IMPORTS                                       #
+########################################################################################
+
 from __future__ import annotations
 
 import operator as op
@@ -7,8 +11,13 @@ from typing import TYPE_CHECKING, Literal, Union
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterator
 
+########################################################################################
+#                                       CONSTANTS                                      #
+########################################################################################
+
 Number = Union[int, float]
 """A type alias for the `float | int` union."""
+
 IntervalType = Literal["closed", "open", "half-open"]
 """
 Intervals can be closed (on both ends), open (on both ends), or half-open
