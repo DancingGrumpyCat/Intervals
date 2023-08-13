@@ -372,29 +372,29 @@ class Interval:
     # of AxB. That proportion is the probability we seek.
     #
     # We can calculate that by starting with triangle PLI, and subtracting triangles OLK
-    # and MJI. They are right isosceles triangles----the points I J K L all lie on y=x.
+    # and MJI. They are right isosceles triangles----the points i j k l all lie on y=x.
     #
     # We calculate the areas of the triangles as 0 if they're negative so that we don't
-    # subtract when we don't want to. We then add back triangle JKN, calculated the same
+    # subtract when we don't want to. We then add back triangle jkn, calculated the same
     # way (depending on its orientation, it can be 0).
     #
     #
     # Link: https://www.desmos.com/calculator/iusjba8eis
     #
     #
-    #     y············ShadedArea := y < x
-    #     |··+*B*+····/
-    #     |··|···|···/
-    #     |··|···|··/
-    #     |--P---O-L---+
-    #     |··|···|/    |
-    #    *A*·|···K    *A*
-    #     |··|··/|     |
-    #     |--M-J-N-----+
-    #     |··|/  |
-    #     |··I   |
-    #     | /|   |
-    #     0--|-B-|----------x
+    #     y ···B···· ShadedArea := y < x
+    #     ╻··b₁╶╴b₂···╱
+    #     ┃··│···│···╱
+    #     ┃··│···│··╱
+    #     ┠─╴p╶─╴o–l──╴a₂
+    #     ┃··│···│╱    │
+    #     A··│···k     │ A
+    #     ┃··│··╱│     ╵
+    #     ┠─╴m–j–n╶───╴a₁
+    #     ┃··│╱  │
+    #     ┃··i   │
+    #     ┃ ╱│   │
+    #     0╺━┷╸B╺┷━━━━━━━━━╸x
     #
     # - - - - - - - - - - - - - - - - - - - -
 
