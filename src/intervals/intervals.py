@@ -77,8 +77,8 @@ class Interval:
 
     def __init__(
         self,
-        lower_bound: Number,
-        upper_bound: Number,
+        lower_bound: Number = 0,
+        upper_bound: Number = 0,
         /,
         *,
         lower_closure: IntervalType = "open",

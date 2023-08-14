@@ -4,12 +4,6 @@ from intervals.intervals import Interval
 
 _INF = float("inf")
 
-ADDITIVE_IDENTITY: Interval = Interval(
-    +0,
-    +0,
-    lower_closure="closed",
-    upper_closure="closed",
-)
 UNIT: Interval = Interval(
     +0,
     +1,
