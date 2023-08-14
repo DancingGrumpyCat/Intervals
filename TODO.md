@@ -16,3 +16,6 @@
 - [ ] Add varargs option for lerp, invlerp, and remap
 
 ## Bugs
+
+1. `Interval._round(x, 0, copysign(1, x))` is off by 1 if x is odd
+1. `-x` (where `x` is an interval) has incorrect `adjusted_upper_bound` if and only if `x`'s lower bound was 0
