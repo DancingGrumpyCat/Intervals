@@ -92,13 +92,15 @@ def test_contains() -> None:
 
 
 def test_truncate() -> None:
-    x = Interval(0.21405899944813878, 9.463497115948577)
-    assert str(x.truncate(+100)) == "(0.21405899944813878, 9.463497115948577]"
-    assert str(x.truncate(+10)) == "(0.2140589994, 9.463497116]"
-    assert str(x.truncate(+5)) == "(0.21405, 9.4635]"
-    assert str(x.truncate(+1)) == "(0.2, 9.5]"
-    assert str(x.truncate(-1)) == "(-0.0, 10.0]"
-    assert str(x.truncate(-2)) == "(-0.0, 100.0]"
+    x = Interval(0.21405899944813878, 8.463497115948577)
+    assert str(x.truncate(+100)) == "(0.21405899944813878, 8.463497115948577]"
+    assert str(x.truncate(+10)) == "(0.2140589994, 8.463497116]"
+    assert str(x.truncate(+5)) == "(0.21405, 8.4635]"
+    assert str(x.truncate(+1)) == "(0.2, 8.5]"
+    assert str(x.truncate()) == "(0, 9]"
+    assert str(x.truncate(0)) == "(0, 9]"
+    assert str(x.truncate(-1)) == "(0, 10]"
+    assert str(x.truncate(-2)) == "(0, 100]"
 
 
 def test_step() -> None:

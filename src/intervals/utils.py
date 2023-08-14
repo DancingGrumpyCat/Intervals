@@ -14,7 +14,7 @@ def clamp(value: Number, interval: Interval) -> Number:
             "I have no idea how you got this error."
             "Magnitude should always be non-negative."
         )
-    return min(interval.adjusted_upper_bound, max(interval.adjusted_lower_bound, value))
+    return min(interval.upper_bound, max(interval.lower_bound, value))
 
 
 def rand_uniform(interval: Interval, *, values: int = 1) -> list[float]:
