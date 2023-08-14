@@ -182,7 +182,7 @@ class Interval:
 
     @property
     def is_bounded(self) -> bool:
-        return _INF not in abs(self.lower_bound), abs(self.upper_bound)
+        return _INF not in (abs(self.lower_bound), abs(self.upper_bound))
 
     @property
     def lower_bound_is_finite(self) -> bool:
