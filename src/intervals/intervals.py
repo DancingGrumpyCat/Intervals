@@ -125,47 +125,64 @@ class Interval:
         self.adjusted_upper_bound = bounds.adjusted_upper_bound
 
     @classmethod
-    def from_string(cls, string: str) -> Interval:
-        string = string.lower().strip()
+    def from_string(cls, interval_string: str) -> Interval:
+        original = interval_string
+        interval_string = interval_string.lower().strip().replace(" ", "")
+
         # Normal form
         if (
-            string.startswith(("[", "("))
-            and string.endswith((")", "]"))
-            and ("," in string or ".." in string)
+            interval_string.startswith(("[", "("))
+            and interval_string.endswith((")", "]"))
+            and ("," in interval_string or ".." in interval_string)
         ):
-            lower_closure: IntervalType = "open" if string.startswith("(") else "closed"
-            upper_closure: IntervalType = "open" if string.endswith(")") else "closed"
-            string = (
-                string.replace("[", "")
+            lower_closure: IntervalType = (
+                "open" if interval_string.startswith("(") else "closed"
+            )
+            upper_closure: IntervalType = (
+                "open" if interval_string.endswith(")") else "closed"
+            )
+
+            interval_string = (
+                interval_string.replace("[", "")  # prepare for collection of digits
                 .replace("(", "")
                 .replace(")", "")
                 .replace("]", "")
-                .replace("..", ",")
+                .replace("..", ",")  # convert to canonical form
             )
-            string = string.split(",")
-            return Interval(
-                float(string[0]),
-                float(string[1]),
-                lower_closure=lower_closure,
-                upper_closure=upper_closure,
-            )
+            (lower_bound, upper_bound) = interval_string.split(",")
+
+            try:
+                return Interval(
+                    # default value triggers if string is empty
+                    float(lower_bound or -_INF),
+                    float(upper_bound or +_INF),
+                    lower_closure=lower_closure,
+                    upper_closure=upper_closure,
+                )
+            except ValueError as e:
+                raise ValueError(
+                    f"failed to parse string '{original}' as Interval because one of "
+                    f"'{lower_bound}', '{upper_bound}' is either not a float or not an "
+                    f"empty string"
+                ) from e
 
         # Plus/Minus form
-        if any(separator in string for separator in ("pm", "p/m", "+-", "+/-", "±")):
-            string = (
-                string.replace(" ", "")
-                .replace("±", "pm")
+        if any(
+            separator in interval_string
+            for separator in ("pm", "p/m", "+-", "+/-", "±")
+        ):
+            interval_string = (
+                interval_string.replace("±", "pm")
                 .replace("+-", "pm")
                 .replace("+/-", "pm")
                 .replace("p/m", "pm")
             )
-            center, plusminus = map(float, string.split("pm"))
-            print(f"<debug> {center} ± {plusminus}")
+            center, plusminus = map(float, interval_string.split("pm"))
             return Interval(
                 center - plusminus, center + plusminus, upper_closure="open"
             )
 
-        return NotImplemented
+        raise ValueError(f"failed to parse '{original}' as Interval")
 
     #################################### PROPERTIES ####################################
 
