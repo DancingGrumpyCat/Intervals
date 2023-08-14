@@ -1,7 +1,6 @@
 import pytest
 from intervals import (
     Interval,
-    ADDITIVE_IDENTITY,
     EMPTY_SET,
     UNIT,
     NEGATIVE_UNIT,
@@ -41,7 +40,6 @@ def test_str() -> None:
     assert Interval(float("-inf"), 0) == Interval.from_string("[,0]")
 
     # test constants
-    assert ADDITIVE_IDENTITY == Interval.from_string("[0, 0]")
     assert EMPTY_SET == Interval.from_string("(0, 0)")
     assert UNIT == Interval.from_string("(0, 1]")
     assert UNIT_DISK == Interval.from_string("[-1, 1]")
