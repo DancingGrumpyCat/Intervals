@@ -4,13 +4,13 @@
 
 from __future__ import annotations
 
+import math
 import operator as op
 import warnings
-import math
 from typing import TYPE_CHECKING, Literal, Union
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Iterator
+    from collections.abc import Callable, Generator, Iterator
 
 ########################################################################################
 #                                       CONSTANTS                                      #
@@ -36,10 +36,10 @@ _INF: Number = float("inf")
 class Bounds:
     def __init__(
         self,
-        lower_bound: Number = 0,
-        upper_bound: Number = 0,
         /,
         *,
+        lower_bound: Number = 0,
+        upper_bound: Number = 0,
         lower_closure: IntervalType,
         upper_closure: IntervalType,
     ) -> None:
@@ -77,23 +77,25 @@ class Interval:
 
     def __init__(
         self,
-        lower_bound: Number = 0,
-        upper_bound: Number = 0,
+        bound1: Number = 0,
+        bound2: Number | None = None,
         /,
         *,
         lower_closure: IntervalType = "open",
         upper_closure: IntervalType = "closed",
     ) -> None:
         # Initialize bounds
+        if bound2 is None:
+            bound2 = bound1
+            bound1 = 0
         bounds = Bounds(
-            lower_bound,
-            upper_bound,
+            lower_bound=bound1,
+            upper_bound=bound2,
             lower_closure=lower_closure,
             upper_closure=upper_closure,
         )
 
         # Put start & end in the right order
-        # TODO: make a helper class for each bounding side
         if bounds.lower_bound > bounds.upper_bound:
             bounds.lower_bound, bounds.upper_bound = (
                 bounds.upper_bound,
@@ -113,7 +115,7 @@ class Interval:
         self.upper_bound = bounds.upper_bound
 
         # Lower and upper bound interval type (unbounded sides must be closed)
-        # Interval type is either closed or open
+        # Interval type here is either closed or open
         self.lower_closure: IntervalType = (
             "closed" if abs(bounds.lower_bound) == _INF else bounds.lower_closure
         )
@@ -304,8 +306,8 @@ class Interval:
         Returns `True` if there are any values present in both intervals.
         """
         return (
-            other.lower_bound <= self.upper_bound
-            and self.lower_bound <= other.upper_bound
+            other.adjusted_lower_bound <= self.adjusted_upper_bound
+            and self.adjusted_lower_bound <= other.adjusted_upper_bound
         )
 
     # ----------------------------------- MANIPULATE --------------------------------- #
@@ -319,38 +321,6 @@ class Interval:
         return Interval(
             self.lower_bound - amount,
             self.upper_bound + amount,
-            lower_closure=self.lower_closure,
-            upper_closure=self.upper_closure,
-        )
-
-    def truncate(self, precision: int | None = None) -> Interval:
-        """
-        ### Description
-        Rounds the lower bound down and the upper bound up, to the provided precision.
-
-        Negative precisions round to increasing powers of 10.
-        """
-
-        # Make integers if precision is None or 0
-        # (Must be None and not 0 because of the previous check)
-        if not precision:
-            return Interval(
-                math.floor(self.lower_bound),
-                math.ceil(self.upper_bound),
-                lower_closure=self.lower_closure,
-                upper_closure=self.upper_closure,
-            )
-
-        # floor or ceil with precision and direction arguments
-        def _round(_x: Number, _p: int, _direction: int) -> Number:
-            if _direction not in (-1, +1):
-                raise ValueError("direction must be up (+1) or down (-1)")
-            out = round(_x + _direction * (0.5 * 10**-_p), _p)
-            return float(out) if _p > 0 else int(out)
-
-        return Interval(
-            _round(self.lower_bound, _p=precision, _direction=-1),
-            _round(self.upper_bound, _p=precision, _direction=+1),
             lower_closure=self.lower_closure,
             upper_closure=self.upper_closure,
         )
@@ -376,7 +346,27 @@ class Interval:
         except ZeroDivisionError:
             return _INF * math.copysign(1, x)
 
-    ####################################### MATH #######################################
+    ###################################### DUNDERS #####################################
+
+    def __bool__(self) -> bool:
+        # Only empty sets will return False
+        # Degenerate intervals return True
+        return not (self.interval_type == "open" and self.diameter == 0)
+
+    def __len__(self) -> int:
+        return math.floor(self.adjusted_upper_bound) - math.floor(
+            self.adjusted_lower_bound
+        )
+
+    def __iter__(self) -> Generator[Number] | None:
+        if self.lower_bound == -_INF:
+            yield from self.step(-1)
+            if self.upper_bound == _INF:
+                raise ValueError(f"cannot iterate over infinite interval {self}")
+        if self.upper_bound == _INF:
+            yield _INF
+        else:
+            yield from self.step(1)
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, Interval):
@@ -392,6 +382,9 @@ class Interval:
             other.lower_closure,
             other.upper_closure,
         )
+
+    def __ne__(self, other: object) -> bool:
+        return not self == other
 
     # ---------------------------------- COMPARISON ---------------------------------- #
 
@@ -413,25 +406,25 @@ class Interval:
     #
     # Link: https://www.desmos.com/calculator/iusjba8eis
     #
-    #
-    #      y
-    #      ╻  ╭╴B╶╮   ShadedArea := y < x
-    #      ┃
-    #      ┃··b₁╶╴b₂···╱
-    #      ┃··│···│···╱
-    #      ┃··│···│··╱
-    #   ╭╴ ┠─╴p╶─╴o–l──╴a₂ ╶╮
-    #   │  ┃··│···│╱        │
-    #   A  ┃··│···k         A
-    #   │  ┃··│··╱│         │
-    #   ╰╴ ┠─╴m–j–n╶───╴a₁ ╶╯
-    #      ┃··│╱  │
-    #      ┃··i   │
-    #      ┃ ╱│   │
-    #      0╺━┷━━━┷━━━━━━━━━╸x
-    #
-    #         ╰╴B╶╯
-    # - - - - - - - - - - - - - - - - - - - -
+    # ---------------------------------------|
+    #      y                                |
+    #      ^  --B--   ShadedArea := y < x   |
+    #      |                                |
+    #      |..b1--b2.../                    |
+    #      |..|...|.../                     |
+    #      |..|...|../                      |
+    #   |  |--p---o-l---a2  |               |
+    #   |  |..|...|/        |               |
+    #   A  |..|...k         A               |
+    #   |  |..|../|         |               |
+    #   |  |--m-j-n-----a1  |               |
+    #      |..|/  |                         |
+    #      |..i   |                         |
+    #      | /|   |                         |
+    #      0--|---|-------> x               |
+    #                                       |
+    #         --B--                         |
+    # ---------------------------------------|
 
     @staticmethod
     def _triangle_area(x: float) -> float:
@@ -509,7 +502,15 @@ class Interval:
         )
 
     def __neg__(self) -> Interval:
-        return self * -1
+        return Interval(
+            -self.lower_bound,
+            -self.upper_bound,
+            lower_closure=self.lower_closure,
+            upper_closure=self.upper_closure,
+        )
+
+    def __pos__(self) -> Interval:
+        return self
 
     def __contains__(self, value: Number) -> bool:
         return self.adjusted_lower_bound <= value <= self.adjusted_upper_bound
@@ -629,6 +630,7 @@ class Interval:
             min(self.upper_bound, other.upper_bound),
         )
 
+    # union
     def __or__(self, other: Interval) -> Interval:
         if not self.intersects(other):
             raise ValueError(
@@ -647,11 +649,59 @@ class Interval:
             upper_closure=max_upper_bounded.upper_closure,
         )
 
+    # floor or ceil with precision and direction arguments
+    def _round(_x: Number, _p: int, _direction: int) -> Number:
+        if _direction not in (-1, +1):
+            raise ValueError("direction must be up (+1) or down (-1)")
+        out = round(_x + _direction * (0.5 * 10**-_p), _p)
+        return float(out) if _p > 0 else int(out)
+
+    def __round__(self, ndigits: int | None = None) -> Interval:
+        """
+        ### Description
+        Rounds the lower bound down and the upper bound up, to the provided ndigits.
+
+        Negative precision round to increasing powers of 10.
+        """
+
+        # Make integers if ndigits is None or 0
+        # (Must be None and not 0 because of the previous check)
+        if not ndigits:
+            return Interval(
+                math.floor(self.lower_bound),
+                math.ceil(self.upper_bound),
+                lower_closure=self.lower_closure,
+                upper_closure=self.upper_closure,
+            )
+
+        return Interval(
+            Interval._round(self.lower_bound, _p=ndigits, _direction=-1),
+            Interval._round(self.upper_bound, _p=ndigits, _direction=+1),
+            lower_closure=self.lower_closure,
+            upper_closure=self.upper_closure,
+        )
+
+    def __floor__(self, ndigits: int = 0) -> Interval:
+        return Interval(
+            Interval._round(self.lower_bound, _p=ndigits, _direction=-1),
+            Interval._round(self.upper_bound, _p=ndigits, _direction=-1),
+            lower_closure="open",
+            upper_closure="closed",
+        )
+
+    def __ceil__(self, ndigits: int = 0) -> Interval:
+        return Interval(
+            Interval._round(self.lower_bound, _p=ndigits, _direction=+1),
+            Interval._round(self.upper_bound, _p=ndigits, _direction=+1),
+            lower_closure="open",
+            upper_closure="closed",
+        )
+
     def __str__(self) -> str:
-        if self.diameter == 0:
-            return "∅"
+        if self.diameter == 0 and self.interval_type == "open":
+            return "{∅}"
         if self.lower_bound == self.upper_bound:
-            return str(self.lower_bound)
+            return str(self.lower_bound).join("{}")
         s, e = self.lower_bound, self.upper_bound
         l_bracket = "[" if self.lower_closure == "closed" else "("
         r_bracket = "]" if self.upper_closure == "closed" else ")"
