@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import operator as op
 import warnings
-from math import copysign
+import math
 from typing import TYPE_CHECKING, Literal, Union
 
 if TYPE_CHECKING:
@@ -282,7 +282,7 @@ class Interval:
         """
         ### Description
         Creates an iterator out of uniform subdivisions of the interval. If subdivisions
-        is not an integer, the last subdivision will be truncated appropriately.
+        is not an integer, the last subdivision will be shortened appropriately.
 
         The interval must have finite diameter.
         """
@@ -323,26 +323,34 @@ class Interval:
             upper_closure=self.upper_closure,
         )
 
-    def truncate(self, precision: int) -> Interval:
+    def truncate(self, precision: int | None = None) -> Interval:
         """
         ### Description
         Rounds the lower bound down and the upper bound up, to the provided precision.
+
+        Negative precisions round to increasing powers of 10.
         """
-        # Negative precisions round to increasing powers of 10;
-        # 0 precision is meaningless.
-        if precision == 0:
-            raise ValueError("precision cannot be exactly equal to 0")
 
-        # floor and ceil with precision argument
-        def _floor(_x: Number, _p: int) -> float:
-            return float(round(_x - 0.5 * 10**-_p, _p))
+        # Make integers if precision is None or 0
+        # (Must be None and not 0 because of the previous check)
+        if not precision:
+            return Interval(
+                math.floor(self.lower_bound),
+                math.ceil(self.upper_bound),
+                lower_closure=self.lower_closure,
+                upper_closure=self.upper_closure,
+            )
 
-        def _ceil(_x: Number, _p: int) -> float:
-            return float(round(_x + 0.5 * 10**-_p, _p))
+        # floor or ceil with precision and direction arguments
+        def _round(_x: Number, _p: int, _direction: int) -> Number:
+            if _direction not in (-1, +1):
+                raise ValueError("direction must be up (+1) or down (-1)")
+            out = round(_x + _direction * (0.5 * 10**-_p), _p)
+            return float(out) if _p > 0 else int(out)
 
         return Interval(
-            _floor(self.lower_bound, _p=precision),
-            _ceil(self.upper_bound, _p=precision),
+            _round(self.lower_bound, _p=precision, _direction=-1),
+            _round(self.upper_bound, _p=precision, _direction=+1),
             lower_closure=self.lower_closure,
             upper_closure=self.upper_closure,
         )
@@ -366,7 +374,7 @@ class Interval:
         try:
             return fn(x, y)
         except ZeroDivisionError:
-            return _INF * copysign(1, x)
+            return _INF * math.copysign(1, x)
 
     ####################################### MATH #######################################
 
