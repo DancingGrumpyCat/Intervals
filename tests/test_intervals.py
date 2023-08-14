@@ -16,8 +16,8 @@ x = Interval(0, 5)
 # bounds must be in the right order
 def test_init() -> None:
     assert x.upper_bound >= x.lower_bound
-    assert x.upper_bound <= x.adjusted_upper_bound
-    assert x.lower_bound >= x.adjusted_lower_bound
+    assert x.upper_bound >= x.adjusted_upper_bound
+    assert x.lower_bound <= x.adjusted_lower_bound
 
 
 def test_str() -> None:
@@ -37,7 +37,7 @@ def test_str() -> None:
 
     # test default infinity
     assert Interval(float("-inf"), float("inf")) == Interval.from_string("[,]")
-    assert Interval(0, float("inf")) == Interval.from_string("[0,]")
+    assert Interval(0, float("inf")) == Interval.from_string("(0,]")
     assert Interval(float("-inf"), 0) == Interval.from_string("[,0]")
 
     # test constants
@@ -95,20 +95,20 @@ def test_contains() -> None:
 
 def test_truncate() -> None:
     x = Interval(0.21405899944813878, 9.463497115948577)
-    assert str(x.truncate(+100)) == "[0.21405899944813878, 9.463497115948577)"
-    assert str(x.truncate(+10)) == "[0.2140589994, 9.463497116)"
-    assert str(x.truncate(+5)) == "[0.21405, 9.4635)"
-    assert str(x.truncate(+1)) == "[0.2, 9.5)"
-    assert str(x.truncate(-1)) == "[-0.0, 10.0)"
-    assert str(x.truncate(-2)) == "[-0.0, 100.0)"
+    assert str(x.truncate(+100)) == "(0.21405899944813878, 9.463497115948577]"
+    assert str(x.truncate(+10)) == "(0.2140589994, 9.463497116]"
+    assert str(x.truncate(+5)) == "(0.21405, 9.4635]"
+    assert str(x.truncate(+1)) == "(0.2, 9.5]"
+    assert str(x.truncate(-1)) == "(-0.0, 10.0]"
+    assert str(x.truncate(-2)) == "(-0.0, 100.0]"
 
 
 def test_step() -> None:
-    assert list(NEGATIVE_UNIT.step(1 / 4)) == [-1.0, -0.75, -0.5, -0.25, 0.0]
-    assert list(UNIT.step(1 / 4)) == [0.0, 0.25, 0.5, 0.75, 1.0]
+    assert list(NEGATIVE_UNIT.step(1 / 4)) == [-1.0, -0.75, -0.5, -0.25]
+    assert list(UNIT.step(1 / 4)) == [0.25, 0.5, 0.75, 1.0]
     assert list(UNIT_DISK.step(1 / 2)) == [-1.0, -0.5, 0.0, 0.5, 1.0]
-    assert list(x.step(-1, start=5)) == [5, 4, 3, 2, 1, 0]
-    assert list(x.step(2)) == [0, 2, 4]
+    assert list(x.step(-1, start=5)) == [5, 4, 3, 2, 1]
+    assert list(x.step(2)) == [2, 4]
 
 
 def test_steps() -> None:
@@ -128,7 +128,7 @@ def test_math() -> None:
     assert x + 2 == Interval(2, 7)
     assert x - 2 == Interval(-2, 3)
     assert x * 2 == Interval(0, 10)
-    assert x * -1 == ~(-x) == Interval(-5, 0)
+    assert x * -1 == -x == ~Interval(-5, 0)
     assert x / 2 == Interval(0.0, 2.5)
     assert x // 2 == Interval(0, 2)
 
@@ -149,9 +149,12 @@ def test_infinite() -> None:
     z = Interval(-inf, inf)
 
     assert x.diameter == y.diameter == z.diameter == inf
-    assert list(islice(x.step(1), 4)) == [0, 1, 2, 3]
+
+    # 0 is not included since the lower bound is open
+    assert list(islice(x.step(1), 4)) == [1, 2, 3, 4]
+
     assert x + 1 == Interval(1, inf)
-    assert x * -1 == y
+    assert ~x * -1 == y
 
 
 # real world example
@@ -159,15 +162,12 @@ def test_binary_fn() -> None:
     height: Interval = Interval.from_string("1.79 +- 0.005")  # meters
     weight: Interval = Interval.from_string("80 +- 0.5")  # kilograms
     bmi: Interval = weight / height**2
-    assert str(bmi.truncate(3)) == "[24.673, 25.266)"
+    assert str(bmi.truncate(3)) == "(24.673, 25.266]"
 
 
 # from_string undoes as_plus_minus (but not necessarily the other way around)
 def test_as_plus_minus() -> None:
-    assert (
-        str(Interval.from_string(interval_string=x.as_plus_minus(precision=3)))
-        == "[0.0, 5.0)"
-    )
+    assert str(Interval.from_string(x.as_plus_minus(precision=3))) == "(0.0, 5.0]"
 
 
 # step can't be the identity element

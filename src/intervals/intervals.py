@@ -40,8 +40,8 @@ class Bounds:
         upper_bound: Number = 0,
         /,
         *,
-        lower_closure: IntervalType = "open",
-        upper_closure: IntervalType = "closed",
+        lower_closure: IntervalType,
+        upper_closure: IntervalType,
     ) -> None:
         self.lower_bound = lower_bound
         self.upper_bound = upper_bound
@@ -125,7 +125,7 @@ class Interval:
         self.adjusted_upper_bound = bounds.adjusted_upper_bound
 
     @classmethod
-    def from_string(cls, interval_string: str) -> Interval:
+    def from_string(cls, interval_string: str, /) -> Interval:
         original = interval_string
         interval_string = interval_string.lower().strip().replace(" ", "")
 
@@ -142,13 +142,9 @@ class Interval:
                 "open" if interval_string.endswith(")") else "closed"
             )
 
-            interval_string = (
-                interval_string.replace("[", "")  # prepare for collection of digits
-                .replace("(", "")
-                .replace(")", "")
-                .replace("]", "")
-                .replace("..", ",")  # convert to canonical form
-            )
+            interval_string = interval_string.strip("[()]").replace(
+                "..", ","
+            )  # convert to canonical form
             (lower_bound, upper_bound) = interval_string.split(",")
 
             try:
@@ -159,12 +155,12 @@ class Interval:
                     lower_closure=lower_closure,
                     upper_closure=upper_closure,
                 )
-            except ValueError as e:
+            except ValueError:
                 raise ValueError(
                     f"failed to parse string '{original}' as Interval because one of "
                     f"'{lower_bound}', '{upper_bound}' is either not a float or not an "
                     f"empty string"
-                ) from e
+                ) from None
 
         # Plus/Minus form
         if any(
@@ -178,9 +174,7 @@ class Interval:
                 .replace("p/m", "pm")
             )
             center, plusminus = map(float, interval_string.split("pm"))
-            return Interval(
-                center - plusminus, center + plusminus, upper_closure="open"
-            )
+            return Interval(center - plusminus, center + plusminus)
 
         raise ValueError(f"failed to parse '{original}' as Interval")
 
@@ -349,7 +343,8 @@ class Interval:
         return Interval(
             _floor(self.lower_bound, _p=precision),
             _ceil(self.upper_bound, _p=precision),
-            upper_closure="open",
+            lower_closure=self.lower_closure,
+            upper_closure=self.upper_closure,
         )
 
     # -------------------------------- HELPER METHODS -------------------------------- #
@@ -503,12 +498,7 @@ class Interval:
         )
 
     def __neg__(self) -> Interval:
-        return Interval(
-            -self.lower_bound,
-            -self.upper_bound,
-            lower_closure=Interval._invert(self.lower_closure),
-            upper_closure=Interval._invert(self.upper_closure),
-        )
+        return self * -1
 
     def __contains__(self, value: Number) -> bool:
         return self.adjusted_lower_bound <= value <= self.adjusted_upper_bound

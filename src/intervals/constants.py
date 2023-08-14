@@ -19,8 +19,8 @@ UNIT: Interval = Interval(
 NEGATIVE_UNIT: Interval = Interval(
     -1,
     +0,
-    lower_closure="open",
-    upper_closure="closed",
+    lower_closure="closed",
+    upper_closure="open",
 )
 UNIT_DISK: Interval = Interval(
     -1,
