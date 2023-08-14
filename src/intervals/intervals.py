@@ -187,6 +187,18 @@ class Interval:
     #################################### PROPERTIES ####################################
 
     @property
+    def is_bounded(self) -> bool:
+        return _INF not in abs(self.lower_bound), abs(self.upper_bound)
+
+    @property
+    def lower_bound_is_finite(self) -> bool:
+        return self.lower_bound != -_INF
+
+    @property
+    def upper_bound_is_finite(self) -> bool:
+        return self.lower_bound != +_INF
+
+    @property
     def diameter(self) -> float:
         """
         ### Description
@@ -247,14 +259,14 @@ class Interval:
         if step == 0:
             raise ValueError("step must be non-zero")
 
-        if self.lower_bound == -_INF:
+        if not self.lower_bound_is_finite:
             if start is None:
                 start = self.upper_bound
             if step > 0:
                 raise ValueError(
                     "if the lower bound is infinite, step must be negative"
                 )
-            if self.upper_bound == _INF:
+            if not self.upper_bound_is_finite:
                 raise ValueError("at least one bound must be finite")
 
         if start is None:
