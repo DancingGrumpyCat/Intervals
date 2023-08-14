@@ -17,6 +17,7 @@ def test_init() -> None:
     assert x.upper_bound >= x.lower_bound
     assert x.upper_bound >= x.adjusted_upper_bound
     assert x.lower_bound <= x.adjusted_lower_bound
+    assert (-x).upper_bound >= (-x).adjusted_upper_bound
 
 
 def test_str() -> None:
@@ -93,16 +94,18 @@ def test_contains() -> None:
 
 def test_truncate() -> None:
     x = Interval(0.21405899944813878, 8.463497115948577)
-    assert x.truncate(+100) == Interval.from_string(
+    assert round(x, +100) == Interval.from_string(
         "(0.21405899944813878, 8.463497115948577]"
     )
-    assert x.truncate(+10) == Interval.from_string("(0.2140589994, 8.463497116]")
-    assert x.truncate(+5) == Interval.from_string("(0.21405, 8.4635]")
-    assert x.truncate(+1) == Interval.from_string("(0.2, 8.5]")
-    assert x.truncate() == Interval.from_string("(0, 9]")
-    assert x.truncate(0) == Interval.from_string("(0, 9]")
-    assert x.truncate(-1) == Interval.from_string("(0, 10]")
-    assert x.truncate(-2) == Interval.from_string("(0, 100]")
+    assert round(x, +10) == Interval.from_string("(0.2140589994, 8.463497116]")
+    assert round(x, +5) == Interval.from_string("(0.21405, 8.4635]")
+    assert round(x, +1) == Interval.from_string("(0.2, 8.5]")
+    assert round(
+        x,
+    ) == Interval.from_string("(0, 9]")
+    assert round(x, 0) == Interval.from_string("(0, 9]")
+    assert round(x, -1) == Interval.from_string("(0, 10]")
+    assert round(x, -2) == Interval.from_string("(0, 100]")
 
 
 def test_step() -> None:
@@ -159,12 +162,21 @@ def test_infinite() -> None:
     assert ~x * -1 == y
 
 
+def test_helper_round() -> None:
+    assert Interval._round(-3.0, 0, -1) == -3
+    assert Interval._round(-3.5, 0, -1) == -4
+    assert Interval._round(-3.5, 0, +1) == -3
+    assert Interval._round(+3.0, 0, +1) == +3
+    assert Interval._round(+3.5, 0, +1) == +4
+    assert Interval._round(+3.5, 0, -1) == +3
+
+
 # real world example
 def test_binary_fn() -> None:
     height: Interval = Interval.from_string("1.79 +- 0.005")  # meters
     weight: Interval = Interval.from_string("80 +- 0.5")  # kilograms
     bmi: Interval = weight / height**2
-    assert str(bmi.truncate(3)) == "(24.673, 25.266]"
+    assert str(round(bmi, 3)) == "(24.673, 25.266]"
 
 
 # from_string undoes as_plus_minus (but not necessarily the other way around)
