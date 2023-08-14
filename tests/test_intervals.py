@@ -1,5 +1,12 @@
 import pytest
-from intervals import Interval, Number, EMPTY_SET, UNIT, NEGATIVE_UNIT, UNIT_DISK, utils
+from intervals import (
+    Interval,
+    ADDITIVE_IDENTITY,
+    EMPTY_SET,
+    UNIT,
+    NEGATIVE_UNIT,
+    UNIT_DISK,
+)
 
 
 # TODO: generate a few random intervals and test them
@@ -14,15 +21,30 @@ def test_init() -> None:
 
 
 def test_str() -> None:
-    w = Interval(0, 5, lower_closure="closed", upper_closure="closed")
-    assert str(w) == "[0, 5]"
-    x = Interval(0, 5, lower_closure="open", upper_closure="closed")
-    assert str(x) == "(0, 5]"
-    y = Interval(0, 5, lower_closure="closed", upper_closure="open")
-    assert str(y) == "[0, 5)"
-    z = Interval(0, 5, lower_closure="open", upper_closure="open")
-    assert str(z) == "(0, 5)"
-    assert str(EMPTY_SET) == "∅"
+    # test bound types
+    assert Interval(
+        0, 5, lower_closure="closed", upper_closure="closed"
+    ) == Interval.from_string("[0, 5]")
+    assert Interval(
+        0, 5, lower_closure="open", upper_closure="closed"
+    ) == Interval.from_string("(0, 5]")
+    assert Interval(
+        0, 5, lower_closure="closed", upper_closure="open"
+    ) == Interval.from_string("[0, 5)")
+    assert Interval(
+        0, 5, lower_closure="open", upper_closure="open"
+    ) == Interval.from_string("(0, 5)")
+
+    # test default infinity
+    assert Interval(float("-inf"), float("inf")) == Interval.from_string("[,]")
+    assert Interval(0, float("inf")) == Interval.from_string("[0,]")
+    assert Interval(float("-inf"), 0) == Interval.from_string("[,0]")
+
+    # test constants
+    assert ADDITIVE_IDENTITY == Interval.from_string("[0, 0]")
+    assert EMPTY_SET == Interval.from_string("(0, 0)")
+    assert UNIT == Interval.from_string("(0, 1]")
+    assert UNIT_DISK == Interval.from_string("[-1, 1]")
 
 
 def test_repr() -> None:
@@ -143,7 +165,8 @@ def test_binary_fn() -> None:
 # from_string undoes as_plus_minus (but not necessarily the other way around)
 def test_as_plus_minus() -> None:
     assert (
-        str(Interval.from_string(string=x.as_plus_minus(precision=3))) == "[0.0, 5.0)"
+        str(Interval.from_string(interval_string=x.as_plus_minus(precision=3)))
+        == "[0.0, 5.0)"
     )
 
 

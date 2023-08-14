@@ -1,4 +1,5 @@
 from intervals.constants import (
+    ADDITIVE_IDENTITY,
     NATURALS,
     NEGATIVE_UNIT,
     PI,
@@ -17,6 +18,7 @@ from intervals.intervals import (
 from intervals.utils import clamp, invlerp, lerp, rand_uniform, remap
 
 __all__: tuple[str, ...] = (
+    "ADDITIVE_IDENTITY",
     "EMPTY_SET",
     "_INF",
     "NEGATIVE_UNIT",
