@@ -369,11 +369,11 @@ class Interval:
             self.adjusted_lower_bound
         )
 
-    def __iter__(self) -> Iterator[Number] | None:
+    def __iter__(self) -> Iterator[Number]:
         if self.lower_bound == -_INF:
-            yield from self.step(-1)
             if self.upper_bound == _INF:
                 raise ValueError(f"cannot iterate over infinite interval {self}")
+            yield from self.step(-1)
         if self.upper_bound == _INF:
             yield _INF
         else:
