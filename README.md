@@ -51,7 +51,7 @@ False
 ```pycon
 >>> interval_3 = Interval.from_string("2 +- 1.2")
 >>> print(interval_3)
-(0.8, 3.2]
+[0.8, 3.2)
 ```
 
 The diameter of such an interval will be double its plus/minus value.
@@ -84,11 +84,11 @@ you can now write
 
 ```python
 # 1.
-for x in ~Interval(10):
+for x in Interval(10):
   ...
 
 # 2.
-[x**2 for x in Interval(10, 14).step(2)]
+[x**2 for x in Interval(10, 15).step(2)]
 ```
 
 and you can do a lot more, like floating point values:
@@ -100,20 +100,17 @@ and you can do a lot more, like floating point values:
 [ 0.          0.06853892  0.27415568  0.61685028  1.09662271  1.71347299
   2.4674011   3.35840705  4.38649084  5.55165248  6.85389195  8.29320925
   9.8696044  11.58307739 13.43362821 15.42125688 17.54596338 19.80774772
- 22.2066099  24.74254992 27.41556778 30.22566348 33.17283701 36.25708839
- 39.4784176 ]
+ 22.2066099  24.74254992 27.41556778 30.22566348 33.17283701 36.25708839]
 ```
 
 ## Arithmetic operations between two intervals
 
-Use the `binary_fn` method.
-
 ```python
 >>> weight = Interval.from_string("80 +- 0.5")  # accurate to the nearest kg
 >>> height = Interval.from_string("1.79 +- 0.005")  # accurate to the nearest cm
->>> bmi = weight.binary_fn(height, lambda x, y: x / y**2)
->>> bmi.truncate(3)
-[24.673, 25.266]
+>>> bmi = weight / height ** 2
+>>> print(round(bmi, 3))
+[24.673, 25.266)
 ```
 
 ## Infinity
@@ -165,8 +162,6 @@ interval_6 = Interval(3, 12)
 ```
 
 ### `lerp`, `invlerp`, and `remap`
-
-**TODO**: add varargs support for `t` and `value`.
 
 ```python
 >>> utils.lerp(interval_5, 0.3)
