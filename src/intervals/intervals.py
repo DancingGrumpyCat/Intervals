@@ -79,9 +79,24 @@ class Bounds:
 class Interval:
     """
     ### Description
-    An Interval has a start and end value, and two booleans indicating closed/open state
-    for each bound. Each of `start` and `end` may be finite or infinite, with some rest-
-    rictions on which methods are then available to use.
+    An Interval has a lower and upper bound, and two values indicating closed/open state
+    for each bound. Each bound may be infinite&mdash;some methods not being available if
+    they are.
+
+    ### Initialization
+    To use the basic `__init__`, write `Interval(y)` or `Interval(x, y)`. In the monadic
+    case, `x` is set to 0. If `x` > `y`, `y` is swapped with `x`.
+
+    The input `x = Interval()` is not the empty set, but instead the interval `(0, 0]`.
+    The main difference is how `0 in x` evaluates.
+
+    The method `Interval.from_string` allows you to instead initialize from a variety of
+    patterns:
+    ```py
+    Interval.from_string("[-2, 6.1]")  # [-2, 6.1]
+    Interval.from_string("[ , 0]")  # [-inf, 0]
+    Interval.from_string("[0, ]")  # [0, inf]
+    Interval.from_string("3 +- 2")  # (1, 5]
     """
 
     ####################################### INIT #######################################
