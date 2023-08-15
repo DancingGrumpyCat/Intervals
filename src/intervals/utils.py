@@ -7,9 +7,9 @@ def clamp(value: Number, interval: Interval) -> Number:
     """
     Clamp value to within interval.
     """
-    if interval.diameter == 0:
+    if interval.width == 0:
         raise ValueError("Magnitude of interval must be non-zero.")
-    if interval.diameter < 0:
+    if interval.width < 0:
         raise ValueError(
             "I have no idea how you got this error."
             "Magnitude should always be non-negative."
@@ -27,7 +27,7 @@ def rand_uniform(interval: Interval, *, values: int = 1) -> list[float]:
         raise ValueError(f"bounds of interval (was {interval}) must be finite")
 
     def f(i: Interval) -> float:
-        return random.random() * i.diameter + i.lower_bound
+        return random.random() * i.width + i.lower_bound
 
     return [f(interval) for _ in range(values)]
 
@@ -42,11 +42,11 @@ def rand_interval(
 
 
 def lerp(interval: Interval, t: Number) -> Number:
-    return interval.adjusted_lower_bound + t * interval.diameter
+    return interval.adjusted_lower_bound + t * interval.width
 
 
 def invlerp(interval: Interval, value: Number) -> Number:
-    return (value - interval.adjusted_lower_bound) / interval.diameter
+    return (value - interval.adjusted_lower_bound) / interval.width
 
 
 def remap(interval1: Interval, interval2: Interval, value: Number) -> Number:

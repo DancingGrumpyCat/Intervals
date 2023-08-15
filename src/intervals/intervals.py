@@ -206,7 +206,7 @@ class Interval:
         return self.lower_bound != +_INF
 
     @property
-    def diameter(self) -> float:
+    def width(self) -> float:
         """
         ### Description
         The positive difference between the apparent lower and upper bounds.
@@ -234,8 +234,7 @@ class Interval:
         """
         return (self.lower_bound + self.upper_bound) / 2
 
-    ################################## NORMAL METHODS ##################################
-
+    @property
     def as_plus_minus(self, *, precision: int = 3) -> str:
         """
         ### Description
@@ -248,6 +247,16 @@ class Interval:
             f"{round(self.midpoint, precision)} ± "
             f"{round(self.upper_bound - self.midpoint, precision)}"
         )
+
+    ################################## STATIC METHODS ##################################
+
+    @staticmethod
+    def approximate(value: Number, scale: float = 1.0) -> Interval:
+        error: float = math.log2(abs(value) + 1) + 1
+        plusminus: float = scale * error
+        return Interval(value - plusminus, value + plusminus)
+
+    ################################## NORMAL METHODS ##################################
 
     def step(self, step: float, /, *, start: float | None = None) -> Iterator[float]:
         """
@@ -299,11 +308,11 @@ class Interval:
 
         The interval must have finite diameter.
         """
-        if self.diameter == _INF:
+        if self.width == _INF:
             raise ValueError("cannot subdivide an infinite interval")
         if subdivisions < 1:
             raise ValueError("number of subdivisions must be 1 or greater")
-        subdivision_width = self.diameter / subdivisions
+        subdivision_width = self.width / subdivisions
         counter = 1
         subdivision = self.lower_bound
         while subdivision <= self.upper_bound:
@@ -362,7 +371,7 @@ class Interval:
     def __bool__(self) -> bool:
         # Only empty sets will return False
         # Degenerate intervals return True
-        return not (self.interval_type == "open" and self.diameter == 0)
+        return not (self.interval_type == "open" and self.width == 0)
 
     def __len__(self) -> int:
         return math.floor(self.adjusted_upper_bound) - math.floor(
@@ -451,20 +460,20 @@ class Interval:
 
         def _lt_helper(interval: Interval, value: Number) -> bool | float:
             def _invlerp(interval: Interval, value: Number) -> Number:
-                return (value - interval.adjusted_lower_bound) / interval.diameter
+                return (value - interval.adjusted_lower_bound) / interval.width
 
             if value in interval:
                 return _invlerp(interval, value)
             return value >= interval.lower_bound
 
         out: bool | float
-        if self.diameter == 0:
+        if self.width == 0:
             if not isinstance(other, Interval):
                 return NotImplemented
             out = _lt_helper(interval=other, value=self.lower_bound)
         elif isinstance(other, (float, int)):
             out = _lt_helper(interval=self, value=other)
-        elif other.diameter == 0:
+        elif other.width == 0:
             out = _lt_helper(interval=self, value=other.lower_bound)
 
         else:
@@ -474,7 +483,7 @@ class Interval:
                 - Interval._triangle_area(other.lower_bound - self.lower_bound)
                 - Interval._triangle_area(other.upper_bound - self.upper_bound)
                 + Interval._triangle_area(other.lower_bound - self.upper_bound)
-            ) / (self.diameter * other.diameter)
+            ) / (self.width * other.width)
             # fmt: on
 
         if 0 < out < 1:
@@ -717,7 +726,7 @@ class Interval:
         )
 
     def __str__(self) -> str:
-        if self.diameter == 0 and self.interval_type == "open":
+        if self.width == 0 and self.interval_type == "open":
             return "{∅}"
         if self.lower_bound == self.upper_bound:
             return str(self.lower_bound).join("{}")

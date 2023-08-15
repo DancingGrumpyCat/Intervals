@@ -154,7 +154,7 @@ def test_infinite() -> None:
     y = Interval(-inf, 0)
     z = Interval(-inf, inf)
 
-    assert x.diameter == y.diameter == z.diameter == inf
+    assert x.width == y.width == z.width == inf
 
     assert list(islice(x.step(1), 4)) == [0, 1, 2, 3]
 
