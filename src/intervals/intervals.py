@@ -369,7 +369,7 @@ class Interval:
             self.adjusted_lower_bound
         )
 
-    def __iter__(self) -> Generator[Number] | None:
+    def __iter__(self) -> Iterator[Number] | None:
         if self.lower_bound == -_INF:
             yield from self.step(-1)
             if self.upper_bound == _INF:
