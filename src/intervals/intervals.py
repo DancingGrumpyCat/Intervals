@@ -645,12 +645,19 @@ class Interval:
             upper_closure=max_upper_bounded.upper_closure,
         )
 
-    # floor or ceil with precision and direction arguments
-    def _round(_x: Number, _p: int, _direction: int) -> Number:
-        if _direction not in (-1, +1):
+    @staticmethod
+    def _round(x: Number, ndigits: int, direction: int) -> Number:
+        """
+        ### Description
+        Rounds x down (floor) or up (ceil) if direction is +1 or -1 respectively. Errors
+        if direction has any other value. Also takes ndigits: the precision to round to.
+        """
+        if float(x).is_integer():
+            return x
+        if direction not in (-1, +1):
             raise ValueError("direction must be up (+1) or down (-1)")
-        out = round(_x + _direction * (0.5 * 10**-_p), _p)
-        return float(out) if _p > 0 else int(out)
+        out = round(x + direction * (0.5 * 10**-ndigits), ndigits)
+        return float(out) if ndigits > 0 else int(out)
 
     def __round__(self, ndigits: int | None = None) -> Interval:
         """
@@ -671,24 +678,24 @@ class Interval:
             )
 
         return Interval(
-            Interval._round(self.lower_bound, _p=ndigits, _direction=-1),
-            Interval._round(self.upper_bound, _p=ndigits, _direction=+1),
+            Interval._round(self.lower_bound, ndigits=ndigits, direction=-1),
+            Interval._round(self.upper_bound, ndigits=ndigits, direction=+1),
             lower_closure=self.lower_closure,
             upper_closure=self.upper_closure,
         )
 
     def __floor__(self, ndigits: int = 0) -> Interval:
         return Interval(
-            Interval._round(self.lower_bound, _p=ndigits, _direction=-1),
-            Interval._round(self.upper_bound, _p=ndigits, _direction=-1),
+            Interval._round(self.lower_bound, ndigits=ndigits, direction=-1),
+            Interval._round(self.upper_bound, ndigits=ndigits, direction=-1),
             lower_closure="open",
             upper_closure="closed",
         )
 
     def __ceil__(self, ndigits: int = 0) -> Interval:
         return Interval(
-            Interval._round(self.lower_bound, _p=ndigits, _direction=+1),
-            Interval._round(self.upper_bound, _p=ndigits, _direction=+1),
+            Interval._round(self.lower_bound, ndigits=ndigits, direction=+1),
+            Interval._round(self.upper_bound, ndigits=ndigits, direction=+1),
             lower_closure="open",
             upper_closure="closed",
         )
