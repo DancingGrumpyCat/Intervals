@@ -49,14 +49,25 @@ class Bounds:
         self.lower_closure = lower_closure
         self.upper_closure = upper_closure
 
+        # Put start & end in the right order
+        if self.lower_bound > self.upper_bound:
+            self.lower_bound, self.upper_bound = (
+                self.upper_bound,
+                self.lower_bound,
+            )
+            self.lower_closure, self.upper_closure = (
+                self.upper_closure,
+                self.lower_closure,
+            )
+
         # The actual values of the bounds adjusted by a tiny number
         # TODO: this number's magnitude should depend somehow on the magnitude of the
         # interval's bounds
-        self.adjusted_lower_bound: Number = lower_bound + EPSILON * (
-            lower_closure == "open"
+        self.adjusted_lower_bound: Number = self.lower_bound + EPSILON * (
+            self.lower_closure == "open"
         )
-        self.adjusted_upper_bound: Number = upper_bound - EPSILON * (
-            upper_closure == "open"
+        self.adjusted_upper_bound: Number = self.upper_bound - EPSILON * (
+            self.upper_closure == "open"
         )
 
 
@@ -95,22 +106,7 @@ class Interval:
             upper_closure=upper_closure,
         )
 
-        # Put start & end in the right order
-        if bounds.lower_bound > bounds.upper_bound:
-            bounds.lower_bound, bounds.upper_bound = (
-                bounds.upper_bound,
-                bounds.lower_bound,
-            )
-            bounds.lower_closure, bounds.upper_closure = (
-                bounds.upper_closure,
-                bounds.lower_closure,
-            )
-            bounds.adjusted_lower_bound, bounds.adjusted_upper_bound = (
-                bounds.adjusted_upper_bound,
-                bounds.adjusted_lower_bound,
-            )
-
-        # The presented values of the bounds
+        # The user-facing values of the bounds
         self.lower_bound = bounds.lower_bound
         self.upper_bound = bounds.upper_bound
 
@@ -391,22 +387,22 @@ class Interval:
     # NOTE that between two Intervals, >= and > are the same, and <= and < are the same.
 
     # # How to calculate the probability of *A* < *B*.
-    # First, draw A and B as independent intervals on the x and y axes. There is a rect-
-    # angle where they intersect. Let's call it AxB.The line y = x bounds ShadedArea be-
-    # low. The triangle JKN----where ShadedArea intersects AxB----fills some proportion
-    # of AxB. That proportion is the probability we seek.
+    # First, draw A on the x axis and B on the y axis. There is a rectangle `mnop` where
+    # they intersect. Let's call it AxB.The line y = x bounds ShadedArea below. Triangle
+    # `jkn`----where ShadedArea intersects AxB----fills some proportion of AxB.
     #
-    # We can calculate that by starting with triangle PLI, and subtracting triangles OLK
-    # and MJI. They are right isosceles triangles----the points i j k l all lie on y=x.
+    # That proportion is the probability we seek. We can calculate that by starting with
+    # triangle `pli`, and by subtracting both triangles `olk` and `mji` (right isosceles
+    # triangles----the points `i`, `j`, `k`, and `l` all lie on y=x.
     #
-    # We calculate the areas of the triangles as 0 if they're negative so that we don't
-    # subtract when we don't want to. We then add back triangle jkn, calculated the same
-    # way (depending on its orientation, it can be 0).
+    # We calculate the areas of the triangles as 0 if they're negative, so that we don't
+    # subtract when we don't want to. We then add back triangle `jkn` if necessary, with
+    # the same technique if its area is negative.
     #
     #
     # Link: https://www.desmos.com/calculator/iusjba8eis
     #
-    # ---------------------------------------|
+    # --------------------------------------|
     #      y                                |
     #      ^  --B--   ShadedArea := y < x   |
     #      |                                |
@@ -424,7 +420,7 @@ class Interval:
     #      0--|---|-------> x               |
     #                                       |
     #         --B--                         |
-    # ---------------------------------------|
+    # --------------------------------------|
 
     @staticmethod
     def _triangle_area(x: float) -> float:
