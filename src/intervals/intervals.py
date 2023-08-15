@@ -10,7 +10,7 @@ import warnings
 from typing import TYPE_CHECKING, Literal, Union
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Generator, Iterator
+    from collections.abc import Callable, Iterator
 
 ########################################################################################
 #                                       CONSTANTS                                      #
@@ -107,8 +107,8 @@ class Interval:
         bound2: Number | None = None,
         /,
         *,
-        lower_closure: IntervalType = "open",
-        upper_closure: IntervalType = "closed",
+        lower_closure: IntervalType = "closed",
+        upper_closure: IntervalType = "open",
     ) -> None:
         # Initialize bounds
         if bound2 is None:

@@ -12,18 +12,18 @@ Many methods and examples herein are taken from
 ```pycon
 >>> # INITIALIZATION
 >>> from utils import binary_fn
->>> interval_1 = Interval(0, 5, lower_closure="open")
->>> interval_2 = Interval(3, 6, upper_closure="open")
+>>> interval_1 = Interval.from_string("(0, 5]")  # (0, 5]
+>>> interval_2 = Interval(3, 6)  # [3, 6)
 
 >>> # METHODS & PROPERTIES
 >>> print(interval_1)
-(0, 5]
+[0, 5)
 >>> list(interval_1.step(2))
-[2, 4]
+[0, 2, 4]
 >>> list(interval_1.step(2, start=-1))
 [1, 3, 5]
->>> list(interval_1.step(-1, start=5))  # does not include 0 because the lower bound is open
-[5, 4, 3, 2, 1]
+>>> list(interval_1.step(-1, start=5))  # does not include 5 because upper_bound is open
+[4, 3, 2, 1, 0]
 >>> interval_1.interval_type
 'half-open'
 >>> interval_1.diameter
@@ -33,11 +33,11 @@ True
 >>> 0 in interval_1
 False
 >>> print(interval_1 + 2)
-(2, 7]
+[2, 7)
 >>> print(-interval_1)  # note that the closed and opened bounds swap order too
-[-5, 0)
+(-5, 0]
 >>> print(5 // interval_1)
-(1, inf]
+[1, inf)
 >>> print(interval_1 & interval_2)
 [3, 5]
 >>> print(interval_1 | interval_2)
@@ -69,15 +69,25 @@ Interval.from_string("2 p/m 1.2")
 
 ## How it can replace `range`
 
-Instead of
+Instead of the following examples:
 
 ```python
+# 1.
+for x in range(10):
+  ...
+
+# 2.
 [x**2 for x in range(10, 15, 2)]
 ```
 
 you can now write
 
 ```python
+# 1.
+for x in ~Interval(10):
+  ...
+
+# 2.
 [x**2 for x in Interval(10, 14).step(2)]
 ```
 
