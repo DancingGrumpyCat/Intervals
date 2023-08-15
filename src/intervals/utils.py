@@ -3,20 +3,6 @@ import random
 from intervals.intervals import Interval, Number
 
 
-def clamp(value: Number, interval: Interval) -> Number:
-    """
-    Clamp value to within interval.
-    """
-    if interval.width == 0:
-        raise ValueError("Magnitude of interval must be non-zero.")
-    if interval.width < 0:
-        raise ValueError(
-            "I have no idea how you got this error."
-            "Magnitude should always be non-negative."
-        )
-    return min(interval.upper_bound, max(interval.lower_bound, value))
-
-
 def rand_uniform(interval: Interval, *, values: int = 1) -> list[float]:
     """
     Return a random float within finite interval.
@@ -52,3 +38,26 @@ def invlerp(interval: Interval, value: Number) -> Number:
 def remap(interval1: Interval, interval2: Interval, value: Number) -> Number:
     t: Number = invlerp(interval1, value)
     return lerp(interval2, t)
+
+
+def clamp(value: Number, interval: Interval) -> Number:
+    """
+    Clamp value to within interval.
+    """
+    if interval.width == 0:
+        return interval.lower_bound
+    return min(interval.upper_bound, max(interval.lower_bound, value))
+
+
+def antipode(value: Number, interval: Interval) -> Number:
+    """
+    Return the value reflected across the midpoint of the interval
+    """
+    return interval.midpoint - value
+
+
+def mod(value: Number, interval: Interval) -> Number:
+    """
+    Return the value modulus the interval range
+    """
+    return value % interval.width + interval.lower_bound
