@@ -15,4 +15,8 @@
     - Intersection (`&`) and union (`|`) need to be changed.
 - [ ] Add varargs option for lerp, invlerp, and remap
 
+## Architecture
+
+- [ ] Move utils to their own files with more appropriate names
+
 ## Bugs
