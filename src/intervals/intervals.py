@@ -468,20 +468,21 @@ class Interval:
             out = _lt_helper(interval=self, value=other.lower_bound)
 
         else:
+            # fmt: off
             out = (
-                0
                 + Interval._triangle_area(other.upper_bound - self.lower_bound)
                 - Interval._triangle_area(other.lower_bound - self.lower_bound)
                 - Interval._triangle_area(other.upper_bound - self.upper_bound)
                 + Interval._triangle_area(other.lower_bound - self.upper_bound)
             ) / (self.diameter * other.diameter)
+            # fmt: on
 
         if 0 < out < 1:
             return out
         return bool(out)
 
     def __gt__(self, other: object) -> bool | float:
-        out = 1 - (self < other)
+        out = 1.0 - (self < other)
         if 0 < out < 1:
             return out
         return bool(out)
