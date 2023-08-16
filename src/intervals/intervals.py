@@ -249,7 +249,7 @@ class Interval:
     #################################### PROPERTIES ####################################
 
     @property
-    def abs(self) -> Interval:
+    def absolute_value(self) -> Interval:
         return self if (self > 0) > 0.5 else -self
 
     @property
