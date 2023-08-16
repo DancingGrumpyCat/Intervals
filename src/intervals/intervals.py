@@ -187,6 +187,40 @@ class Interval:
 
         raise ValueError(f"failed to parse '{original}' as Interval")
 
+    @classmethod
+    def p_adic(
+        cls,
+        j: int,
+        n: int,
+        /,
+        *,
+        p: int = 2,
+        lower_closure: IntervalType = "closed",
+        upper_closure: IntervalType = "open",
+    ) -> Interval:
+        """
+        ### Description
+        A special type of interval. The input constraints of dyadic intervals force them
+        to be structured as a sort of infinite n-ary tree. See
+        [Wikipedia: Dyadic Intervals](https://en.wikipedia.org/wiki/Interval_(mathematics)#Dyadic_intervals)
+        for the source of this and for more information.
+        `p` should be prime, but since this is a slow test it is not enforced.
+        ### Properties
+        - width is always an integer power of `p`
+        - contained in exactly one p-adic interval of `p` times its length
+        - spanned by exactly `p` p-adic intervals of its length over `p`
+        - if two open dyadic (`p == 2`) intervals intersect, then one is a subset of
+        the other
+        """
+        if not any([isinstance(j, int), isinstance(n, int)]):
+            raise TypeError("both j and n must be integers")
+        return Interval(
+            j / p**n,
+            (j + 1) / p**n,
+            lower_closure=lower_closure,
+            upper_closure=upper_closure,
+        )
+
     #################################### PROPERTIES ####################################
 
     @property
@@ -326,6 +360,21 @@ class Interval:
             and self.adjusted_lower_bound <= other.adjusted_upper_bound
         )
 
+    def is_adjacent(self, other: Interval) -> bool:
+        """
+        ### Description
+        Returns `True` if the intervals do not intersect and there are no values between
+        them.
+        """
+        if self.intersects(other):
+            return False
+        if (
+            self.upper_bound == other.lower_bound
+            or other.upper_bound == self.lower_bound
+        ):
+            return True
+        return False
+
     # ----------------------------------- MANIPULATE --------------------------------- #
 
     def change_width(self, amount: Number) -> Interval:
@@ -339,6 +388,41 @@ class Interval:
             self.upper_bound + amount,
             lower_closure=self.lower_closure,
             upper_closure=self.upper_closure,
+        )
+
+    def split(self, value: Number) -> tuple[Interval, Interval, Interval]:
+        if value not in self:
+            raise ValueError(f"value must be within interval ({value} not in {self})")
+        return (
+            Interval(
+                self.lower_bound,
+                value,
+                lower_closure=self.lower_closure,
+                upper_closure="open",
+            ),
+            Interval(value, value),
+            Interval(
+                value,
+                self.upper_bound,
+                lower_closure="open",
+                upper_closure=self.upper_closure,
+            ),
+        )
+
+    def closed(self) -> Interval:
+        return Interval(
+            self.lower_bound,
+            self.upper_bound,
+            lower_closure="closed",
+            upper_closure="closed",
+        )
+
+    def opened(self) -> Interval:
+        return Interval(
+            self.lower_bound,
+            self.upper_bound,
+            lower_closure="open",
+            upper_closure="open",
         )
 
     # -------------------------------- HELPER METHODS -------------------------------- #
