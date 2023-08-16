@@ -14,6 +14,11 @@
     - Integration? Maybe the user can do that using `sympy`.
     - Intersection (`&`) and union (`|`) need to be changed.
 - [ ] Add varargs option for lerp, invlerp, and remap
+- [ ] Add Region parent class
+  - [ ] Multidimensional version of intervals.
+- [ ] Add CircularArc child class
+  - [ ] Adds method `arc_length(self, radius: Number) -> Number` equal to width * radius
+  - [ ] Adds method `to_bounding_box(self) -> tuple[Interval, Interval]` returning the smallest orthogonal region on the plane as a pair of intervals
 
 ## Architecture
 
