@@ -11,7 +11,6 @@ Many methods and examples herein are taken from
 
 ```pycon
 >>> # INITIALIZATION
->>> from utils import binary_fn
 >>> interval_1 = Interval.from_string("[0, 5)")  # [0, 5)
 >>> interval_2 = Interval(3, 6)  # [3, 6)
 
