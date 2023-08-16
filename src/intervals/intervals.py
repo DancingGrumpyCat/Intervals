@@ -249,6 +249,10 @@ class Interval:
     #################################### PROPERTIES ####################################
 
     @property
+    def abs(self) -> Interval:
+        return self if (self > 0) > 0.5 else -self
+
+    @property
     def is_bounded(self) -> bool:
         return _INF not in (abs(self.lower_bound), abs(self.upper_bound))
 
@@ -326,7 +330,7 @@ class Interval:
         the upper bound is also infinite, a ValueError is raised.
         """
 
-        original_start = start
+        original_start: float | None = start
         if step == 0:
             # step must be nonzero
             raise ValueError(_error_message("step", "nonzero", f"was {step}"))
@@ -334,16 +338,16 @@ class Interval:
             # step must be finite
             raise ValueError(_error_message("step", "finite", f"was {step}"))
 
-        if not self.lower_bound_is_finite and start is None:
+        if not (self.lower_bound_is_finite or start is not None):
             start = self.upper_bound
 
-        if not self.lower_bound_is_finite and not self.upper_bound_is_finite:
+        if not (self.lower_bound_is_finite or self.upper_bound_is_finite):
             # at least one bound must be finite
             raise ValueError(
                 _error_message("at least one bound", "finite", f"interval was {self}")
             )
 
-        if not self.lower_bound_is_finite and step > 0:
+        if not (self.lower_bound_is_finite or step <= 0):
             # step must be negative if the lower bound is infinite
             raise ValueError(
                 _error_message(
