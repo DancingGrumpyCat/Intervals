@@ -264,7 +264,16 @@ class Interval:
         """
         return (self.lower_bound + self.upper_bound) / 2
 
-    @property
+    ################################## STATIC METHODS ##################################
+
+    @staticmethod
+    def approximate(value: Number, scale: float = 1.0) -> Interval:
+        error: float = math.log2(abs(value) + 1) + 1
+        plusminus: float = scale * error
+        return Interval(value - plusminus, value + plusminus)
+
+    ################################## NORMAL METHODS ##################################
+
     def as_plus_minus(self, *, precision: int = 3) -> str:
         """
         ### Description
@@ -277,16 +286,6 @@ class Interval:
             f"{round(self.midpoint, precision)} ± "
             f"{round(self.upper_bound - self.midpoint, precision)}"
         )
-
-    ################################## STATIC METHODS ##################################
-
-    @staticmethod
-    def approximate(value: Number, scale: float = 1.0) -> Interval:
-        error: float = math.log2(abs(value) + 1) + 1
-        plusminus: float = scale * error
-        return Interval(value - plusminus, value + plusminus)
-
-    ################################## NORMAL METHODS ##################################
 
     def step(self, step: float, /, *, start: float | None = None) -> Iterator[float]:
         """
@@ -339,7 +338,10 @@ class Interval:
         The interval must have finite diameter.
         """
         if self.width == _INF:
-            raise ValueError("cannot subdivide an infinite interval")
+            raise ValueError(
+                f"interval to subdivide must be finite "
+                f"({self} width is {self.width})"
+            )
         if subdivisions < 1:
             raise ValueError("number of subdivisions must be 1 or greater")
         subdivision_width = self.width / subdivisions

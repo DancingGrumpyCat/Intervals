@@ -45,6 +45,8 @@ def clamp(value: Number, interval: Interval) -> Number:
     Clamp value to within interval.
     """
     if interval.width == 0:
+        if interval.lower_closure == interval.upper_closure == "open":
+            raise ValueError("cannot clamp any value to empty set")
         return interval.lower_bound
     return min(interval.upper_bound, max(interval.lower_bound, value))
 
