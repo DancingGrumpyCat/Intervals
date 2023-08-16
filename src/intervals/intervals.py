@@ -467,7 +467,7 @@ class Interval:
         )
 
     def closed(self) -> Interval:
-        return Interval(
+        return type(self)(
             self.lower_bound,
             self.upper_bound,
             lower_closure="closed",
@@ -475,7 +475,7 @@ class Interval:
         )
 
     def opened(self) -> Interval:
-        return Interval(
+        return type(self)(
             self.lower_bound,
             self.upper_bound,
             lower_closure="open",
@@ -693,11 +693,11 @@ class Interval:
         )
 
     @staticmethod
-    def __dunder_type_error(self: Any, other: Any) -> str:
+    def __dunder_type_error(p1: Any, p2: Any) -> str:
         return _error_message(
             "input",
             "Interval and Number, or Interval and Interval",
-            f"was {self} ({type(self).__name__}) + {other} ({type(other).__name__})",
+            f"was {p1} ({type(p1).__name__}) + {p2} ({type(p2).__name__})",
         )
 
     def __add__(self, other: Number | Interval) -> Interval:
@@ -897,7 +897,7 @@ class Interval:
         """
         if float(x).is_integer():
             return x
-        if direction not in (-1, +1):
+        if abs(direction) != 1:
             raise ValueError(
                 _error_message("direction", "up (+1) or down (-1)", f"was {direction}")
             )
