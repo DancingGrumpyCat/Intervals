@@ -5,7 +5,6 @@ from intervals import (
     UNIT,
     POSITIVE_REALS,
     UNIT_DISK,
-    _INF,
 )
 
 
@@ -152,15 +151,15 @@ def test_infinite() -> None:
 
     inf = float("inf")
 
-    x = Interval(0, _INF)
-    y = Interval(-_INF, 0)
-    z = Interval(-_INF, _INF)
+    x = Interval(0, float("inf"))
+    y = Interval(-float("inf"), 0)
+    z = Interval(-float("inf"), float("inf"))
 
-    assert x.width == y.width == z.width == _INF
+    assert x.width == y.width == z.width == float("inf")
 
     assert list(islice(x.step(1), 4)) == [0, 1, 2, 3]
 
-    assert x + 1 == Interval(1, _INF)
+    assert x + 1 == Interval(1, float("inf"))
     assert ~x * -1 == y
 
 

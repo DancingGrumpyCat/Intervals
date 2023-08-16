@@ -35,8 +35,7 @@ def _error_message(faulty_object_str: str, how_to_fix: str, reason: str) -> str:
     "{number to union with interval} must be {adjacent to or within interval}
     ({other} {not adjacent to or within} {self})"
     """
-    phrase1 = f"{faulty_object_str} must be {how_to_fix}"
-    return f"{phrase1} ({reason})"
+    return f"{faulty_object_str} must be {how_to_fix} ({reason})"
 
 
 ########################################################################################
@@ -95,11 +94,15 @@ class Interval:
     infinite&mdash;some methods not being available if they are.
 
     ### Initialization
-    To use the basic `__init__`, write `Interval(y)` or `Interval(x, y)`. In the monadic
-    case, `x` is set to 0. If `x` > `y`, `y` is swapped with `x`.
+    To use the basic `__init__`, write:
 
-    The input `x = Interval()` is not the empty set, but instead the interval `(0, 0]`.
-    The main difference is how `0 in x` evaluates.
+    ```py
+    Interval()  # {0}
+    Interval(y)  # [0, y)
+    Interval(x, y)  # [x, y)
+    ```
+
+    If `x` > `y`, `y` is swapped with `x`.
 
     The method `Interval.from_string` allows you to instead initialize from a variety of
     patterns:
@@ -123,8 +126,7 @@ class Interval:
     ) -> None:
         # Initialize bounds
         if bound2 is None:
-            bound2 = bound1
-            bound1 = 0
+            bound2, bound1 = bound1, 0
         bounds = Bounds(
             lower_bound=bound1,
             upper_bound=bound2,
@@ -161,14 +163,12 @@ class Interval:
             upper_closure: IntervalType = (
                 "open" if interval_string.endswith(")") else "closed"
             )
-
-            interval_string = interval_string.strip("[()]").replace(
-                "..", ","
-            )  # convert to canonical form
+            # convert to canonical form
+            interval_string = interval_string.strip("[()]").replace("..", ",")
             (lower_bound, upper_bound) = interval_string.split(",")
 
             try:
-                return Interval(
+                return cls(
                     # default value triggers if string is empty
                     float(lower_bound or -_INF),
                     float(upper_bound or +_INF),
@@ -234,17 +234,23 @@ class Interval:
         - if two open dyadic (`p == 2`) intervals intersect, then one is a subset of
         the other
         """
-        if not all([isinstance(j, int), isinstance(n, int)]):
+        if not (isinstance(j, int) and isinstance(n, int)):
             # both j and n must be integers
             raise TypeError(
                 _error_message("both j and n", "integers", f"j was {j} and n was {n}")
             )
-        return Interval(
+        return cls(
             j / p**n,
             (j + 1) / p**n,
             lower_closure=lower_closure,
             upper_closure=upper_closure,
         )
+
+    @classmethod
+    def approximate(cls, value: Number, scale: float = 1.0) -> Interval:
+        error = math.log2(abs(value) + 1) + 1
+        plusminus = scale * error
+        return cls(value - plusminus, value + plusminus)
 
     #################################### PROPERTIES ####################################
 
@@ -292,14 +298,6 @@ class Interval:
         Returns the arithmetic average of the two bounds, treating each as closed.
         """
         return (self.lower_bound + self.upper_bound) / 2
-
-    ################################## STATIC METHODS ##################################
-
-    @staticmethod
-    def approximate(value: Number, scale: float = 1.0) -> Interval:
-        error: float = math.log2(abs(value) + 1) + 1
-        plusminus: float = scale * error
-        return Interval(value - plusminus, value + plusminus)
 
     ################################## NORMAL METHODS ##################################
 
