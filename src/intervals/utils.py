@@ -1,6 +1,7 @@
 import random
 
 from intervals.intervals import Interval, Number, _error_message
+from math import e
 
 
 def rand_uniform(interval: Interval, *, values: int = 1) -> list[float]:
@@ -53,6 +54,19 @@ def clamp(value: Number, interval: Interval) -> Number:
             )
         return interval.lower_bound
     return min(interval.upper_bound, max(interval.lower_bound, value))
+
+
+def smooth_clamp(value: Number, interval: Interval, a: Number) -> Number:
+    """
+    Uses the Boltzmann operator to differentiably clamp.
+    """
+
+    def boltzmann(a: Number, xs: list[Number, Number]) -> list[Number, Number]:
+        return sum(x * e ** (a * x) for x in xs) / sum(e ** (a * x) for x in xs)
+
+    return boltzmann(
+        -a, [interval.upper_bound, boltzmann(a, [interval.lower_bound, value])]
+    )
 
 
 def antipode(value: Number, interval: Interval) -> Number:
