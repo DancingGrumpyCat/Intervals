@@ -648,8 +648,29 @@ class Interval:
         )
 
     # union
-    def __or__(self, other: Interval) -> Interval:
-        if not self.intersects(other):
+    def __or__(self, other: Number | Interval) -> Interval:
+        if isinstance(other, (float, int)):
+            if other == self.lower_bound:
+                return Interval(
+                    self.lower_bound,
+                    self.upper_bound,
+                    lower_closure="closed",
+                    upper_closure=self.upper_closure,
+                )
+            if other == self.upper_bound:
+                return Interval(
+                    self.lower_bound,
+                    self.upper_bound,
+                    lower_closure=self.lower_closure,
+                    upper_closure="closed",
+                )
+            if other in self:
+                return self
+            raise ValueError(
+                "number to union with interval must be adjacent to or within "
+                f"interval ({other} not adjacent to or within {self})"
+            )
+        if not (self.intersects(other) or self.is_adjacent(other)):
             raise ValueError(
                 "intervals must intersect or be adjacent to create a union"
             )
