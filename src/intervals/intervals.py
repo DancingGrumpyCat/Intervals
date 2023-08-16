@@ -127,12 +127,8 @@ class Interval:
 
         # Lower and upper bound interval type (unbounded sides must be closed)
         # Interval type here is either closed or open
-        self.lower_closure: IntervalType = (
-            "closed" if abs(bounds.lower_bound) == _INF else bounds.lower_closure
-        )
-        self.upper_closure: IntervalType = (
-            "closed" if abs(bounds.upper_bound) == _INF else bounds.upper_closure
-        )
+        self.lower_closure: IntervalType = bounds.lower_closure
+        self.upper_closure: IntervalType = bounds.upper_closure
 
         self.adjusted_lower_bound = bounds.adjusted_lower_bound
         self.adjusted_upper_bound = bounds.adjusted_upper_bound
