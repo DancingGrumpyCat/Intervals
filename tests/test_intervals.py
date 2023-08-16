@@ -3,8 +3,9 @@ from intervals import (
     Interval,
     EMPTY_SET,
     UNIT,
-    NEGATIVE_UNIT,
+    POSITIVE_REALS,
     UNIT_DISK,
+    _INF,
 )
 
 
@@ -37,14 +38,15 @@ def test_str() -> None:
 
     inf = float("inf")
     # test default infinity
-    assert Interval(-inf, inf) == Interval.from_string("[,]")
-    assert Interval(0, inf) == Interval.from_string("[0,]")
-    assert -Interval(0, inf) == Interval.from_string("[,0]")
+    assert Interval(-inf, inf).closed() == Interval.from_string("[,]")
+    assert Interval(0, inf).closed() == Interval.from_string("[0,]")
+    assert -Interval(0, inf).closed() == Interval.from_string("[,0]")
 
     # test constants
     assert EMPTY_SET == Interval.from_string("(0, 0)")
-    assert UNIT == Interval.from_string("(0, 1]")
+    assert UNIT == Interval.from_string("[0, 1)")
     assert UNIT_DISK == Interval.from_string("[-1, 1]")
+    assert POSITIVE_REALS == Interval.from_string("[0, ]")
 
 
 def test_repr() -> None:
@@ -110,8 +112,8 @@ def test_truncate() -> None:
 
 
 def test_step() -> None:
-    assert list(NEGATIVE_UNIT.step(1 / 4)) == [-1.0, -0.75, -0.5, -0.25]
-    assert list(UNIT.step(1 / 4)) == [0.25, 0.5, 0.75, 1.0]
+    assert list((-UNIT).step(1 / 4)) == [-0.75, -0.5, -0.25, 0.0]
+    assert list(UNIT.step(1 / 4)) == [0, 0.25, 0.5, 0.75]
     assert list(UNIT_DISK.step(1 / 2)) == [-1.0, -0.5, 0.0, 0.5, 1.0]
     assert list(x.step(-1, start=5)) == [4, 3, 2, 1, 0]
     assert list(x.step(2)) == [0, 2, 4]
@@ -150,15 +152,15 @@ def test_infinite() -> None:
 
     inf = float("inf")
 
-    x = Interval(0, inf)
-    y = Interval(-inf, 0)
-    z = Interval(-inf, inf)
+    x = Interval(0, _INF)
+    y = Interval(-_INF, 0)
+    z = Interval(-_INF, _INF)
 
-    assert x.width == y.width == z.width == inf
+    assert x.width == y.width == z.width == _INF
 
     assert list(islice(x.step(1), 4)) == [0, 1, 2, 3]
 
-    assert x + 1 == Interval(1, inf)
+    assert x + 1 == Interval(1, _INF)
     assert ~x * -1 == y
 
 
