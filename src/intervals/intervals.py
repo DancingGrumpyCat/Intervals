@@ -666,6 +666,28 @@ class Interval:
             upper_closure=max_upper_bounded.upper_closure,
         )
 
+    def __ror__(self, value: Number) -> Interval:
+        if value == self.lower_bound:
+            return Interval(
+                self.lower_bound,
+                self.upper_bound,
+                lower_closure="closed",
+                upper_closure=self.upper_closure,
+            )
+        if value == self.upper_bound:
+            return Interval(
+                self.lower_bound,
+                self.upper_bound,
+                lower_closure=self.lower_closure,
+                upper_closure="closed",
+            )
+        if value in self:
+            return self
+        raise ValueError(
+            "number to union with interval must be adjacent to or within "
+            f"interval ({value} not adjacent to or within {self})"
+        )
+
     @staticmethod
     def _round(x: Number, ndigits: int, direction: int) -> Number:
         """
