@@ -41,7 +41,7 @@ False
 [3, 5]
 >>> print(interval_1 | interval_2)
 (0, 6)
->>> print(binary_fn(interval_1, interval_2, lambda x, y: (x + y) / 2))
+>>> print((interval_1 + interval_2) / 2)
 [1.5, 5.5]
 ```
 
