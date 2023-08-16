@@ -12,6 +12,7 @@ from intervals.intervals import (
     Bounds,
     Interval,
     Number,
+    _error_message,
 )
 from intervals.utils import clamp, invlerp, lerp, rand_uniform, remap
 
@@ -27,6 +28,7 @@ __all__: tuple[str, ...] = (
     "Bounds",
     "Interval",
     "Number",
+    "_error_message",
     "clamp",
     "invlerp",
     "lerp",

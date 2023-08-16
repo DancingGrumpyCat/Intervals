@@ -7,7 +7,7 @@ from __future__ import annotations
 import math
 import operator as op
 import warnings
-from typing import TYPE_CHECKING, Literal, Union
+from typing import TYPE_CHECKING, Any, Literal, Union
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterator
@@ -27,6 +27,17 @@ Intervals can be closed (on both ends), open (on both ends), or half-open
 
 EPSILON: Number = 1e-15
 _INF: Number = float("inf")
+
+
+def _error_message(faulty_object_str: str, how_to_fix: str, reason: str) -> str:
+    """
+    ### Example:
+    "{number to union with interval} must be {adjacent to or within interval}
+    ({other} {not adjacent to or within} {self})"
+    """
+    phrase1 = f"{faulty_object_str} must be {how_to_fix}"
+    return f"{phrase1} ({reason})"
+
 
 ########################################################################################
 #                                  BOUNDS HELPER CLASS                                 #
@@ -165,10 +176,13 @@ class Interval:
                     upper_closure=upper_closure,
                 )
             except ValueError:
+                # each bound must be either a float ... or an empty string
                 raise ValueError(
-                    f"failed to parse string '{original}' as Interval because one of "
-                    f"'{lower_bound}', '{upper_bound}' is either not a float or not an "
-                    f"empty string"
+                    _error_message(
+                        "each bound",
+                        "either a float as a string, or an empty string",
+                        f"input was '{original}'",
+                    )
                 ) from None
 
         # Plus/Minus form
@@ -185,7 +199,15 @@ class Interval:
             center, plusminus = map(float, interval_string.split("pm"))
             return Interval(center - plusminus, center + plusminus)
 
-        raise ValueError(f"failed to parse '{original}' as Interval")
+        # interval string must be a valid interval, matching ...
+        raise ValueError(
+            _error_message(
+                "interval string",
+                "a valid interval, matching either the plus minus form or bracket "
+                "notation",
+                f"input was '{original}'",
+            )
+        )
 
     @classmethod
     def p_adic(
@@ -212,8 +234,11 @@ class Interval:
         - if two open dyadic (`p == 2`) intervals intersect, then one is a subset of
         the other
         """
-        if not any([isinstance(j, int), isinstance(n, int)]):
-            raise TypeError("both j and n must be integers")
+        if not all([isinstance(j, int), isinstance(n, int)]):
+            # both j and n must be integers
+            raise TypeError(
+                _error_message("both j and n", "integers", f"j was {j} and n was {n}")
+            )
         return Interval(
             j / p**n,
             (j + 1) / p**n,
@@ -233,7 +258,7 @@ class Interval:
 
     @property
     def upper_bound_is_finite(self) -> bool:
-        return self.lower_bound != +_INF
+        return self.upper_bound != +_INF
 
     @property
     def width(self) -> float:
@@ -301,18 +326,30 @@ class Interval:
         the upper bound is also infinite, a ValueError is raised.
         """
 
+        original_start = start
         if step == 0:
-            raise ValueError("step must be non-zero")
+            # step must be nonzero
+            raise ValueError(_error_message("step", "nonzero", f"was {step}"))
+        if abs(step) == _INF:
+            # step must be finite
+            raise ValueError(_error_message("step", "finite", f"was {step}"))
 
-        if not self.lower_bound_is_finite:
-            if start is None:
-                start = self.upper_bound
-            if step > 0:
-                raise ValueError(
-                    "if the lower bound is infinite, step must be negative"
+        if not self.lower_bound_is_finite and start is None:
+            start = self.upper_bound
+
+        if not self.lower_bound_is_finite and not self.upper_bound_is_finite:
+            # at least one bound must be finite
+            raise ValueError(
+                _error_message("at least one bound", "finite", f"interval was {self}")
+            )
+
+        if not self.lower_bound_is_finite and step > 0:
+            # step must be negative if the lower bound is infinite
+            raise ValueError(
+                _error_message(
+                    "step", "negative if the lower bound is infinite", f"was {step}"
                 )
-            if not self.upper_bound_is_finite:
-                raise ValueError("at least one bound must be finite")
+            )
 
         if start is None:
             start = self.lower_bound
@@ -320,8 +357,15 @@ class Interval:
         if start not in self:
             start += step
             if start not in self:
-                raise ValueError("start too far away from interval")
-
+                # start must be one or fewer steps away from interval
+                raise ValueError(
+                    _error_message(
+                        "start",
+                        "one or fewer steps away from interval",
+                        f"interval was {self}, step was {step},"
+                        f"and start was {original_start}",
+                    )
+                )
         counter = 1
         current: Number = start
         while current in self:
@@ -339,11 +383,18 @@ class Interval:
         """
         if self.width == _INF:
             raise ValueError(
-                f"interval to subdivide must be finite "
-                f"({self} width is {self.width})"
+                _error_message(
+                    "interval to subdivide",
+                    "finite",
+                    f"width of {self} is {self.width}",
+                )
             )
         if subdivisions < 1:
-            raise ValueError("number of subdivisions must be 1 or greater")
+            raise ValueError(
+                _error_message(
+                    "number of subdivisions", "1 or greater", f"was {subdivisions}"
+                )
+            )
         subdivision_width = self.width / subdivisions
         counter = 1
         subdivision = self.lower_bound
@@ -394,7 +445,9 @@ class Interval:
 
     def split(self, value: Number) -> tuple[Interval, Interval, Interval]:
         if value not in self:
-            raise ValueError(f"value must be within interval ({value} not in {self})")
+            raise ValueError(
+                _error_message("value", "within interval", f"{value} not in {self}")
+            )
         return (
             Interval(
                 self.lower_bound,
@@ -461,14 +514,18 @@ class Interval:
         )
 
     def __iter__(self) -> Iterator[Number]:
+        sign = +1
         if self.lower_bound == -_INF:
             if self.upper_bound == _INF:
-                raise ValueError(f"cannot iterate over infinite interval {self}")
-            yield from self.step(-1)
-        if self.upper_bound == _INF:
-            yield _INF
-        else:
-            yield from self.step(1)
+                raise ValueError(
+                    _error_message(
+                        "interval to iterate in",
+                        "bounded in at least one direction",
+                        f"was {self}",
+                    )
+                )
+            sign = -1
+        yield from self.step(sign)
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, Interval):
@@ -633,6 +690,14 @@ class Interval:
             max(possible_bounds),
         )
 
+    @staticmethod
+    def __dunder_type_error(self: Any, other: Any) -> str:
+        return _error_message(
+            "input",
+            "Interval and Number, or Interval and Interval",
+            f"was {self} ({type(self).__name__}) + {other} ({type(other).__name__})",
+        )
+
     def __add__(self, other: Number | Interval) -> Interval:
         if isinstance(other, (float, int)):
             return Interval(
@@ -643,7 +708,7 @@ class Interval:
             )
         if isinstance(other, Interval):
             return Interval._binary_fn(self, other, lambda x, y: x + y)
-        raise TypeError("input must be Interval and Number, or Interval and Interval")
+        raise TypeError(Interval.__dunder_type_error(self, other))
 
     __radd__ = __add__
 
@@ -657,7 +722,7 @@ class Interval:
             )
         if isinstance(other, Interval):
             return Interval._binary_fn(self, other, lambda x, y: x - y)
-        raise TypeError("input must be Interval and Number, or Interval and Interval")
+        raise TypeError(Interval.__dunder_type_error(self, other))
 
     __rsub__ = __sub__
 
@@ -671,7 +736,7 @@ class Interval:
             )
         if isinstance(other, Interval):
             return Interval._binary_fn(self, other, lambda x, y: x * y)
-        raise TypeError("input must be Interval and Number, or Interval and Interval")
+        raise TypeError(Interval.__dunder_type_error(self, other))
 
     __rmul__ = __mul__
 
@@ -685,7 +750,7 @@ class Interval:
             )
         if isinstance(other, Interval):
             return Interval._binary_fn(self, other, lambda x, y: x / y)
-        raise TypeError("input must be Interval and Number, or Interval and Interval")
+        raise TypeError(Interval.__dunder_type_error(self, other))
 
     def __rtruediv__(self, value: Number) -> Interval:
         return Interval(
@@ -705,7 +770,7 @@ class Interval:
             )
         if isinstance(other, Interval):
             return Interval._binary_fn(self, other, lambda x, y: x // y)
-        raise TypeError("input must be Interval and Number, or Interval and Interval")
+        raise TypeError(Interval.__dunder_type_error(self, other))
 
     def __rfloordiv__(self, value: Number) -> Interval:
         return Interval(
@@ -715,15 +780,35 @@ class Interval:
             upper_closure=self.upper_closure,
         )
 
-    def __pow__(self, exponent: int) -> Interval:
-        if not isinstance(exponent, int):
-            raise TypeError("exponent must be an integer")
+    def __pow__(self, exponent: Number) -> Interval:
+        if not (
+            isinstance(exponent, int)
+            or (self.lower_bound >= 0 and self.upper_bound >= 0)
+        ):
+            raise TypeError(
+                _error_message(
+                    "exponent",
+                    "an integer if either bound is negative",
+                    f"input was {self} ** {exponent}",
+                )
+            )
         return Interval(
             self.lower_bound**exponent,
             self.upper_bound**exponent,
             lower_closure=self.lower_closure,
             upper_closure=self.upper_closure,
         )
+
+    def __rmod__(self, value: Number) -> Number:
+        if not isinstance(value, (float, int)):
+            raise TypeError(
+                _error_message(
+                    "value",
+                    "of type `Number` (int | float)",
+                    f"was {value} ({type(value).__name__})",
+                )
+            )
+        return value % self.width + self.lower_bound
 
     def __and__(self, other: Interval) -> Interval:
         if not self.intersects(other):
@@ -753,8 +838,11 @@ class Interval:
             if other in self:
                 return self
             raise ValueError(
-                "number to union with interval must be adjacent to or within "
-                f"interval ({other} not adjacent to or within {self})"
+                _error_message(
+                    "value",
+                    "adjacent to or within interval",
+                    f"{other} neither adjacent to nor within {self}",
+                )
             )
         if not (self.intersects(other) or self.is_adjacent(other)):
             raise ValueError(
@@ -791,8 +879,11 @@ class Interval:
         if value in self:
             return self
         raise ValueError(
-            "number to union with interval must be adjacent to or within "
-            f"interval ({value} not adjacent to or within {self})"
+            _error_message(
+                "value",
+                "adjacent to or within interval",
+                f"{value} neither adjacent to nor within {self}",
+            )
         )
 
     @staticmethod
@@ -805,7 +896,9 @@ class Interval:
         if float(x).is_integer():
             return x
         if direction not in (-1, +1):
-            raise ValueError("direction must be up (+1) or down (-1)")
+            raise ValueError(
+                _error_message("direction", "up (+1) or down (-1)", f"was {direction}")
+            )
         out = round(x + direction * (0.5 * 10**-ndigits), ndigits)
         return float(out) if ndigits > 0 else int(out)
 

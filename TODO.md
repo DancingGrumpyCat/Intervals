@@ -19,12 +19,10 @@
 - [ ] Add CircularArc child class
   - [ ] Adds method `arc_length(self, radius: Number) -> Number` equal to width * radius
   - [ ] Adds method `to_bounding_box(self) -> tuple[Interval, Interval]` returning the smallest orthogonal region on the plane as a pair of intervals
-- [ ] Make all error messages consistent using a function
+- [ ] Support complex-valued Intervals
 
 ## Architecture
 
 - [ ] Move utils to their own files with more appropriate names
 
 ## Bugs
-
-- [ ] `mod` util allows a `ZeroDivisionError`
