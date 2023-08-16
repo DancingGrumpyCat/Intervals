@@ -79,9 +79,9 @@ class Bounds:
 class Interval:
     """
     ### Description
-    An Interval has a lower and upper bound, and two values indicating closed/open state
-    for each bound. Each bound may be infinite&mdash;some methods not being available if
-    they are.
+    An Interval is a connected subset of ℝ. It must always have a lower and upper bound,
+    as well as two values indicating closed/open state for each bound. Each bound may be
+    infinite&mdash;some methods not being available if they are.
 
     ### Initialization
     To use the basic `__init__`, write `Interval(y)` or `Interval(x, y)`. In the monadic
