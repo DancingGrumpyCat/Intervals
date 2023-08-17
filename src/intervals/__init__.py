@@ -10,6 +10,7 @@ from intervals.intervals import (
     EMPTY_SET,
     Bounds,
     Interval,
+    IntervalType,
     Number,
     _error_message,
 )
@@ -25,6 +26,7 @@ __all__: tuple[str, ...] = (
     "WHOLE_NUMBERS",
     "Bounds",
     "Interval",
+    "IntervalType",
     "Number",
     "_error_message",
     "clamp",

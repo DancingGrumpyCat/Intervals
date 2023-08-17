@@ -7,7 +7,8 @@ from __future__ import annotations
 import math
 import operator as op
 import warnings
-from typing import TYPE_CHECKING, Any, Literal, Union
+from enum import Enum
+from typing import TYPE_CHECKING, Any, Union
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterator
@@ -16,26 +17,31 @@ if TYPE_CHECKING:
 #                                       CONSTANTS                                      #
 ########################################################################################
 
-Number = Union[int, float]
-"""A type alias for the `float | int` union."""
 
-IntervalType = Literal["closed", "open", "half-open"]
-"""
-Intervals can be closed (on both ends), open (on both ends), or half-open
-(open on one end and closed on the other).
-"""
-
-EPSILON: Number = 1e-15
-_INF: Number = float("inf")
-
-
-def _error_message(faulty_object_str: str, how_to_fix: str, reason: str) -> str:
+def _error_message(faulty_object: str, how_to_fix: str, reason: str) -> str:
     """
     ### Example:
     "{number to union with interval} must be {adjacent to or within interval}
     ({other} {not adjacent to or within} {self})"
     """
-    return f"{faulty_object_str} must be {how_to_fix} ({reason})"
+    return f"{faulty_object} must be {how_to_fix} ({reason})"
+
+
+Number = Union[int, float]
+"""A type alias for the `float | int` union."""
+
+
+class IntervalType(Enum):
+    OPEN = "open"
+    """A single open bound, or an interval where both bounds are open."""
+    CLOSED = "closed"
+    """A single closed bound, or an interval where both bounds are closed."""
+    HALF_OPEN = "half-open"
+    """An interval where one bound is closed and the other is open, in either order."""
+
+
+EPSILON: Number = 1e-15
+_INF: Number = float("inf")
 
 
 ########################################################################################
@@ -74,10 +80,10 @@ class Bounds:
         # TODO: this number's magnitude should depend somehow on the magnitude of the
         # interval's bounds
         self.adjusted_lower_bound: Number = self.lower_bound + EPSILON * (
-            self.lower_closure == "open"
+            self.lower_closure == IntervalType.OPEN
         )
         self.adjusted_upper_bound: Number = self.upper_bound - EPSILON * (
-            self.upper_closure == "open"
+            self.upper_closure == IntervalType.OPEN
         )
 
 
@@ -121,8 +127,8 @@ class Interval:
         bound2: Number | None = None,
         /,
         *,
-        lower_closure: IntervalType = "closed",
-        upper_closure: IntervalType = "open",
+        lower_closure: IntervalType = IntervalType.CLOSED,
+        upper_closure: IntervalType = IntervalType.OPEN,
     ) -> None:
         # Initialize bounds
         if bound2 is None:
@@ -140,8 +146,8 @@ class Interval:
 
         # Lower and upper bound interval type (unbounded sides must be closed)
         # Interval type here is either closed or open
-        self.lower_closure: IntervalType = bounds.lower_closure
-        self.upper_closure: IntervalType = bounds.upper_closure
+        self.lower_closure = bounds.lower_closure
+        self.upper_closure = bounds.upper_closure
 
         self.adjusted_lower_bound = bounds.adjusted_lower_bound
         self.adjusted_upper_bound = bounds.adjusted_upper_bound
@@ -157,11 +163,15 @@ class Interval:
             and interval_string.endswith((")", "]"))
             and ("," in interval_string or ".." in interval_string)
         ):
-            lower_closure: IntervalType = (
-                "open" if interval_string.startswith("(") else "closed"
+            lower_closure = (
+                IntervalType.OPEN
+                if interval_string.startswith("(")
+                else IntervalType.CLOSED
             )
-            upper_closure: IntervalType = (
-                "open" if interval_string.endswith(")") else "closed"
+            upper_closure = (
+                IntervalType.OPEN
+                if interval_string.endswith(")")
+                else IntervalType.CLOSED
             )
             # convert to canonical form
             interval_string = interval_string.strip("[()]").replace("..", ",")
@@ -217,8 +227,8 @@ class Interval:
         /,
         *,
         p: int = 2,
-        lower_closure: IntervalType = "closed",
-        upper_closure: IntervalType = "open",
+        lower_closure: IntervalType = IntervalType.CLOSED,
+        upper_closure: IntervalType = IntervalType.OPEN,
     ) -> Interval:
         """
         ### Description
@@ -280,16 +290,11 @@ class Interval:
 
     @property
     def interval_type(self) -> IntervalType:
-        """
-        ### Description
-        The type of interval can be `"closed"` (if both bounds are closed), `"open"` (if
-        both bounds are open), or `"half-open"` (if neither of the above is true).
-        """
-        if self.lower_closure == self.upper_closure == "closed":
-            return "closed"
-        if self.lower_closure == self.upper_closure == "open":
-            return "open"
-        return "half-open"
+        if self.lower_closure == self.upper_closure == IntervalType.CLOSED:
+            return IntervalType.CLOSED
+        if self.lower_closure == self.upper_closure == IntervalType.OPEN:
+            return IntervalType.OPEN
+        return IntervalType.HALF_OPEN
 
     @property
     def midpoint(self) -> float:
@@ -455,13 +460,13 @@ class Interval:
                 self.lower_bound,
                 value,
                 lower_closure=self.lower_closure,
-                upper_closure="open",
+                upper_closure=IntervalType.OPEN,
             ),
             Interval(value, value),
             Interval(
                 value,
                 self.upper_bound,
-                lower_closure="open",
+                lower_closure=IntervalType.CLOSED,
                 upper_closure=self.upper_closure,
             ),
         )
@@ -470,25 +475,25 @@ class Interval:
         return type(self)(
             self.lower_bound,
             self.upper_bound,
-            lower_closure="closed",
-            upper_closure="closed",
+            lower_closure=IntervalType.CLOSED,
+            upper_closure=IntervalType.CLOSED,
         )
 
     def opened(self) -> Interval:
         return type(self)(
             self.lower_bound,
             self.upper_bound,
-            lower_closure="open",
-            upper_closure="open",
+            lower_closure=IntervalType.OPEN,
+            upper_closure=IntervalType.OPEN,
         )
 
     # -------------------------------- HELPER METHODS -------------------------------- #
 
     @staticmethod
     def _invert(it: IntervalType) -> IntervalType:
-        if it == "closed":
-            return "open"
-        return "closed"
+        if it == IntervalType.CLOSED:
+            return IntervalType.OPEN
+        return IntervalType.CLOSED
 
     @staticmethod
     def _x_div_0_is_inf(
@@ -508,7 +513,7 @@ class Interval:
     def __bool__(self) -> bool:
         # Only empty sets will return False
         # Degenerate intervals return True
-        return not (self.interval_type == "open" and self.width == 0)
+        return not (self.interval_type == IntervalType.OPEN and self.width == 0)
 
     def __len__(self) -> int:
         return math.floor(self.adjusted_upper_bound) - math.floor(
@@ -827,7 +832,7 @@ class Interval:
                 return Interval(
                     self.lower_bound,
                     self.upper_bound,
-                    lower_closure="closed",
+                    lower_closure=IntervalType.CLOSED,
                     upper_closure=self.upper_closure,
                 )
             if other == self.upper_bound:
@@ -835,7 +840,7 @@ class Interval:
                     self.lower_bound,
                     self.upper_bound,
                     lower_closure=self.lower_closure,
-                    upper_closure="closed",
+                    upper_closure=IntervalType.CLOSED,
                 )
             if other in self:
                 return self
@@ -868,7 +873,7 @@ class Interval:
             return Interval(
                 self.lower_bound,
                 self.upper_bound,
-                lower_closure="closed",
+                lower_closure=IntervalType.CLOSED,
                 upper_closure=self.upper_closure,
             )
         if value == self.upper_bound:
@@ -876,7 +881,7 @@ class Interval:
                 self.lower_bound,
                 self.upper_bound,
                 lower_closure=self.lower_closure,
-                upper_closure="closed",
+                upper_closure=IntervalType.CLOSED,
             )
         if value in self:
             return self
@@ -933,26 +938,26 @@ class Interval:
         return Interval(
             Interval._round(self.lower_bound, ndigits=ndigits, direction=-1),
             Interval._round(self.upper_bound, ndigits=ndigits, direction=-1),
-            lower_closure="open",
-            upper_closure="closed",
+            lower_closure=IntervalType.OPEN,
+            upper_closure=IntervalType.CLOSED,
         )
 
     def __ceil__(self, ndigits: int = 0) -> Interval:
         return Interval(
             Interval._round(self.lower_bound, ndigits=ndigits, direction=+1),
             Interval._round(self.upper_bound, ndigits=ndigits, direction=+1),
-            lower_closure="open",
-            upper_closure="closed",
+            lower_closure=IntervalType.OPEN,
+            upper_closure=IntervalType.CLOSED,
         )
 
     def __str__(self) -> str:
-        if self.width == 0 and self.interval_type == "open":
+        if self.width == 0 and self.interval_type == IntervalType.OPEN:
             return "{∅}"
         if self.lower_bound == self.upper_bound:
             return str(self.lower_bound).join("{}")
         s, e = self.lower_bound, self.upper_bound
-        l_bracket = "[" if self.lower_closure == "closed" else "("
-        r_bracket = "]" if self.upper_closure == "closed" else ")"
+        l_bracket = "[" if self.lower_closure == IntervalType.CLOSED else "("
+        r_bracket = "]" if self.upper_closure == IntervalType.CLOSED else ")"
         return f"{l_bracket}{s}, {e}{r_bracket}"
 
     def __repr__(self) -> str:
@@ -967,4 +972,9 @@ class Interval:
         )
 
 
-EMPTY_SET: Interval = Interval(0, 0, lower_closure="open", upper_closure="open")
+EMPTY_SET: Interval = Interval(
+    0,
+    0,
+    lower_closure=IntervalType.OPEN,
+    upper_closure=IntervalType.OPEN,
+)

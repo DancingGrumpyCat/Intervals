@@ -1,7 +1,7 @@
 import random
-
-from intervals.intervals import Interval, Number, _error_message
 from math import e
+
+from intervals.intervals import Interval, IntervalType, Number, _error_message
 
 
 def rand_uniform(interval: Interval, *, values: int = 1) -> list[float]:
@@ -48,7 +48,7 @@ def clamp(value: Number, interval: Interval) -> Number:
     Clamp value to within interval.
     """
     if interval.width == 0:
-        if interval.lower_closure == interval.upper_closure == "open":
+        if interval.lower_closure == interval.upper_closure == IntervalType.OPEN:
             raise ValueError(
                 _error_message("interval", "not the empty set", f"was {interval}")
             )
@@ -61,11 +61,11 @@ def smooth_clamp(value: Number, interval: Interval, a: Number) -> Number:
     Uses the Boltzmann operator to differentiably clamp.
     """
 
-    def boltzmann(a: Number, xs: list[Number, Number]) -> list[Number, Number]:
+    def __boltzmann(a: Number, xs: tuple[Number, ...]) -> Number:
         return sum(x * e ** (a * x) for x in xs) / sum(e ** (a * x) for x in xs)
 
-    return boltzmann(
-        -a, [interval.upper_bound, boltzmann(a, [interval.lower_bound, value])]
+    return __boltzmann(
+        -a, (interval.upper_bound, __boltzmann(a, (interval.lower_bound, value)))
     )
 
 
