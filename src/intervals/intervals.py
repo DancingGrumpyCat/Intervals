@@ -714,7 +714,7 @@ class Interval:
                 upper_closure=self.upper_closure,
             )
         if isinstance(other, Interval):
-            return Interval._binary_fn(self, other, lambda x, y: x + y)
+            return Interval._binary_fn(self, other, op.add)
         raise TypeError(Interval.__dunder_type_error(self, other))
 
     __radd__ = __add__
@@ -728,7 +728,7 @@ class Interval:
                 upper_closure=self.upper_closure,
             )
         if isinstance(other, Interval):
-            return Interval._binary_fn(self, other, lambda x, y: x - y)
+            return Interval._binary_fn(self, other, op.sub)
         raise TypeError(Interval.__dunder_type_error(self, other))
 
     __rsub__ = __sub__
@@ -742,7 +742,7 @@ class Interval:
                 upper_closure=self.upper_closure,
             )
         if isinstance(other, Interval):
-            return Interval._binary_fn(self, other, lambda x, y: x * y)
+            return Interval._binary_fn(self, other, op.mul)
         raise TypeError(Interval.__dunder_type_error(self, other))
 
     __rmul__ = __mul__
@@ -756,7 +756,7 @@ class Interval:
                 upper_closure=self.upper_closure,
             )
         if isinstance(other, Interval):
-            return Interval._binary_fn(self, other, lambda x, y: x / y)
+            return Interval._binary_fn(self, other, op.truediv)
         raise TypeError(Interval.__dunder_type_error(self, other))
 
     def __rtruediv__(self, value: Number) -> Interval:
@@ -776,7 +776,7 @@ class Interval:
                 upper_closure=self.upper_closure,
             )
         if isinstance(other, Interval):
-            return Interval._binary_fn(self, other, lambda x, y: x // y)
+            return Interval._binary_fn(self, other, op.floordiv)
         raise TypeError(Interval.__dunder_type_error(self, other))
 
     def __rfloordiv__(self, value: Number) -> Interval:
