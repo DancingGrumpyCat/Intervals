@@ -21,8 +21,4 @@
   - [ ] Adds method `to_bounding_box(self) -> tuple[Interval, Interval]` returning the smallest orthogonal region on the plane as a pair of intervals
 - [ ] Support complex-valued Intervals
 
-## Architecture
-
-- [ ] Move utils to their own files with more appropriate names
-
 ## Bugs
