@@ -607,11 +607,8 @@ class Interval:
             return NotImplemented
 
         def _lt_helper(interval: Interval, value: Number) -> bool | float:
-            def _invlerp(interval: Interval, value: Number) -> Number:
-                return (value - interval.adjusted_lower_bound) / interval.width
-
             if value in interval:
-                return _invlerp(interval, value)
+                return invlerp(interval, value)
             return value >= interval.lower_bound
 
         out: bool | float
