@@ -8,6 +8,7 @@ import random
 import math
 import operator as op
 import warnings
+from functools import reduce
 from enum import Enum
 from typing import TYPE_CHECKING, Any, Sequence, Union
 
@@ -998,6 +999,21 @@ PI = Interval.from_string(f"({223 / 71}, {22 / 7})")
 ########################################################################################
 #                                   UTILITY FUNCTIONS                                  #
 ########################################################################################
+
+###################################### REDUCTIONS ######################################
+
+
+def union(*intervals: Sequence[Interval]) -> Interval:
+    """
+    Returns the union-reduction of a sequence of intervals; that is, it starts with the
+    degenerate interval {0}, and progressively unions each interval in the sequence from
+    left to right.
+    """
+    return reduce(lambda x, y: x | y, intervals, Interval())
+
+
+
+######################################### OTHER ########################################
 
 
 def rand_uniform(interval: Interval, *, values: int = 1) -> list[float]:
