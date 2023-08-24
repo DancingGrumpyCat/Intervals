@@ -1,6 +1,7 @@
 import pytest
 from intervals import (
     Interval,
+    IntervalType,
     EMPTY_SET,
     UNIT,
     POSITIVE_REALS,
@@ -23,16 +24,16 @@ def test_init() -> None:
 def test_str() -> None:
     # test bound types
     assert Interval(
-        0, 5, lower_closure="closed", upper_closure="closed"
+        0, 5, lower_closure=IntervalType.CLOSED, upper_closure=IntervalType.CLOSED
     ) == Interval.from_string("[0, 5]")
     assert Interval(
-        0, 5, lower_closure="open", upper_closure="closed"
+        0, 5, lower_closure=IntervalType.OPEN, upper_closure=IntervalType.CLOSED
     ) == Interval.from_string("(0, 5]")
     assert Interval(
-        0, 5, lower_closure="closed", upper_closure="open"
+        0, 5, lower_closure=IntervalType.CLOSED, upper_closure=IntervalType.OPEN
     ) == Interval.from_string("[0, 5)")
     assert Interval(
-        0, 5, lower_closure="open", upper_closure="open"
+        0, 5, lower_closure=IntervalType.OPEN, upper_closure=IntervalType.OPEN
     ) == Interval.from_string("(0, 5)")
 
     inf = float("inf")
@@ -49,34 +50,40 @@ def test_str() -> None:
 
 
 def test_repr() -> None:
-    w = Interval(0, 5, lower_closure="closed", upper_closure="closed")
+    w = Interval(
+        0, 5, lower_closure=IntervalType.CLOSED, upper_closure=IntervalType.CLOSED
+    )
     assert (
         repr(w) == "Interval("
         "lower_bound=0, upper_bound=5, "
-        "lower_closure=closed, upper_closure=closed)"
+        "lower_closure=CLOSED, upper_closure=CLOSED)"
     )
-    x = Interval(0, 5, lower_closure="open", upper_closure="closed")
+    x = Interval(
+        0, 5, lower_closure=IntervalType.OPEN, upper_closure=IntervalType.CLOSED
+    )
     assert (
         repr(x) == "Interval("
         "lower_bound=0, upper_bound=5, "
-        "lower_closure=open, upper_closure=closed)"
+        "lower_closure=OPEN, upper_closure=CLOSED)"
     )
-    y = Interval(0, 5, lower_closure="closed", upper_closure="open")
+    y = Interval(
+        0, 5, lower_closure=IntervalType.CLOSED, upper_closure=IntervalType.OPEN
+    )
     assert (
         repr(y) == "Interval("
         "lower_bound=0, upper_bound=5, "
-        "lower_closure=closed, upper_closure=open)"
+        "lower_closure=CLOSED, upper_closure=OPEN)"
     )
-    z = Interval(0, 5, lower_closure="open", upper_closure="open")
+    z = Interval(0, 5, lower_closure=IntervalType.OPEN, upper_closure=IntervalType.OPEN)
     assert (
         repr(z) == "Interval("
         "lower_bound=0, upper_bound=5, "
-        "lower_closure=open, upper_closure=open)"
+        "lower_closure=OPEN, upper_closure=OPEN)"
     )
     assert (
         repr(EMPTY_SET) == "Interval("
         "lower_bound=0, upper_bound=0, "
-        "lower_closure=open, upper_closure=open)"
+        "lower_closure=OPEN, upper_closure=OPEN)"
     )
 
 
@@ -88,10 +95,10 @@ def test_contains() -> None:
     assert x.adjusted_lower_bound in x
     assert x.adjusted_upper_bound in x
 
-    # exactly one of these is true
-    assert (x.lower_bound not in x) + (x.lower_closure == "closed") == 1
-    # exactly one of these is true
-    assert (x.upper_bound not in x) + (x.upper_closure == "closed") == 1
+    # exactly one of these conditions is true
+    assert (x.lower_bound not in x) + (x.lower_closure == IntervalType.CLOSED) == 1
+    # exactly one of these conditions is true
+    assert (x.upper_bound not in x) + (x.upper_closure == IntervalType.CLOSED) == 1
 
 
 def test_truncate() -> None:
@@ -139,11 +146,16 @@ def test_math() -> None:
     assert x / 2 == Interval(0.0, 2.5)
     assert x // 2 == Interval(0, 2)
 
-    y = Interval(0, 5, lower_closure="open")  # (0, 5]
-    z = Interval(3, 6, upper_closure="open")  # [3, 6)
+    y = Interval(0, 5, lower_closure=IntervalType.CLOSED)  # (0, 5]
+    z = Interval(3, 6, upper_closure=IntervalType.CLOSED)  # [3, 6)
     assert y.intersects(z)
     assert y & z == Interval(3, 5)  # [3, 5]
-    assert y | z == Interval(0, 6, lower_closure="open", upper_closure="open")  # (0, 6)
+    assert y | z == Interval(
+        0,
+        6,
+        lower_closure=IntervalType.CLOSED,
+        upper_closure=IntervalType.CLOSED,
+    )  # (0, 6)
 
 
 def test_infinite() -> None:

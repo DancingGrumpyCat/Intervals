@@ -1,20 +1,22 @@
-from intervals.constants import (
+from intervals.intervals import (
+    EMPTY_SET,
     NATURALS,
     PI,
     POSITIVE_REALS,
     UNIT,
     UNIT_DISK,
     WHOLE_NUMBERS,
-)
-from intervals.intervals import (
-    EMPTY_SET,
     Bounds,
     Interval,
     IntervalType,
     Number,
     _error_message,
+    clamp,
+    invlerp,
+    lerp,
+    rand_uniform,
+    remap,
 )
-from intervals.utils import clamp, invlerp, lerp, rand_uniform, remap
 
 __all__: tuple[str, ...] = (
     "EMPTY_SET",

@@ -4,11 +4,13 @@
 
 from __future__ import annotations
 
+import random
 import math
 import operator as op
 import warnings
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Union
+from typing import TYPE_CHECKING, Any, Sequence, Union
+
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterator
@@ -103,8 +105,8 @@ class Interval:
     To use the basic `__init__`, write:
 
     ```py
-    Interval()  # {0}
-    Interval(y)  # [0, y)
+    Interval()      # {0}
+    Interval(y)     # [0, y)
     Interval(x, y)  # [x, y)
     ```
 
@@ -114,9 +116,9 @@ class Interval:
     patterns:
     ```py
     Interval.from_string("[-2, 6.1]")  # [-2, 6.1]
-    Interval.from_string("[ , 0]")  # [-inf, 0]
-    Interval.from_string("[0, ]")  # [0, inf]
-    Interval.from_string("3 +- 2")  # (1, 5]
+    Interval.from_string("[ , 0]")     # [-inf, 0]
+    Interval.from_string("[0, ]")      # [0, +inf]
+    Interval.from_string("3 +- 2")     # (1, 5]
     """
 
     ####################################### INIT #######################################
@@ -951,10 +953,15 @@ class Interval:
         )
 
     def __str__(self) -> str:
+        # Empty set
         if self.width == 0 and self.interval_type == IntervalType.OPEN:
             return "{∅}"
+
+        # Degenerate interval
         if self.lower_bound == self.upper_bound:
             return str(self.lower_bound).join("{}")
+
+        # Normal
         s, e = self.lower_bound, self.upper_bound
         l_bracket = "[" if self.lower_closure == IntervalType.CLOSED else "("
         r_bracket = "]" if self.upper_closure == IntervalType.CLOSED else ")"
@@ -962,8 +969,8 @@ class Interval:
 
     def __repr__(self) -> str:
         lo, hi = self.lower_bound, self.upper_bound
-        loc = self.lower_closure
-        hic = self.upper_closure
+        loc = self.lower_closure.name
+        hic = self.upper_closure.name
         return (
             f"Interval("
             f"lower_bound={lo}, upper_bound={hi}, "
@@ -972,9 +979,108 @@ class Interval:
         )
 
 
+########################################################################################
+#                                  INTERVAL CONSTANTS                                  #
+########################################################################################
+
+
 EMPTY_SET: Interval = Interval(
     0,
     0,
     lower_closure=IntervalType.OPEN,
     upper_closure=IntervalType.OPEN,
 )
+UNIT = Interval(1)
+UNIT_DISK = ~(UNIT | -UNIT)
+POSITIVE_REALS = Interval(float("inf")).closed()
+NATURALS: Iterator[int] = (int(x) for x in POSITIVE_REALS.step(1))
+WHOLE_NUMBERS: Iterator[int] = (int(x) for x in (POSITIVE_REALS + 1).step(1))
+PI = Interval.from_string(f"({223 / 71}, {22 / 7})")
+
+
+########################################################################################
+#                                   UTILITY FUNCTIONS                                  #
+########################################################################################
+
+
+def rand_uniform(interval: Interval, *, values: int = 1) -> list[float]:
+    """
+    Return a random float within finite interval.
+    """
+    if abs(interval.adjusted_lower_bound) == float("inf") or abs(
+        interval.upper_bound
+    ) == float("inf"):
+        raise ValueError(
+            _error_message("bounds of interval", "finite", f"was {interval})")
+        )
+
+    def f(i: Interval) -> float:
+        return random.random() * i.width + i.lower_bound
+
+    return [f(interval) for _ in range(values)]
+
+
+def rand_interval(
+    lower_bound_interval: Interval, upper_bound_interval: Interval
+) -> Interval:
+    return Interval(
+        rand_uniform(lower_bound_interval)[0],
+        rand_uniform(upper_bound_interval)[0],
+    )
+
+
+def lerp(interval: Interval, t: Number) -> Number:
+    return interval.adjusted_lower_bound + t * interval.width
+
+
+def invlerp(interval: Interval, value: Number) -> Number:
+    return (value - interval.adjusted_lower_bound) / interval.width
+
+
+def remap(interval1: Interval, interval2: Interval, value: Number) -> Number:
+    t: Number = invlerp(interval1, value)
+    return lerp(interval2, t)
+
+
+def clamp(value: Number, interval: Interval) -> Number:
+    """
+    Clamp value to within interval.
+    """
+    if interval.width == 0:
+        if interval.lower_closure == interval.upper_closure == IntervalType.OPEN:
+            raise ValueError(
+                _error_message("interval", "not the empty set", f"was {interval}")
+            )
+        return interval.lower_bound
+    return min(interval.upper_bound, max(interval.lower_bound, value))
+
+
+def boltzmann(a: Number, xs: Sequence[Number], /, *, base: Number = math.e) -> Number:
+    """
+    ### Description
+    Returns the min, mean, or max of a sequence of numbers depending if a is -inf, 0, or
+    +inf. If a is none of those, the result is a smoothed min or max. The result of this
+    is differentiable over the input parameters.
+
+    Only change the base parameter if you know what you're doing.
+    """
+    return sum(x * base ** (a * x) for x in xs) / sum(base ** (a * x) for x in xs)
+
+
+def smooth_clamp(value: Number, interval: Interval, a: Number) -> Number:
+    """
+    ### Description
+    Uses the Boltzmann operator to differentiably clamp to an interval.
+    """
+
+    return boltzmann(
+        -a, (interval.upper_bound, boltzmann(a, (interval.lower_bound, value)))
+    )
+
+
+def antipode(value: Number, interval: Interval) -> Number:
+    """
+    ### Description
+    Return the value reflected across the midpoint of the interval
+    """
+    return interval.midpoint - value

@@ -1,6 +1,6 @@
 import pytest
 from intervals import Interval, clamp, rand_uniform, lerp, invlerp
-from intervals import Number, Bounds, EMPTY_SET
+from intervals import Number, EMPTY_SET
 
 x = Interval(0, 5)
 
