@@ -10,7 +10,7 @@ import operator as op
 import warnings
 from functools import reduce
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Sequence, Union
+from typing import TYPE_CHECKING, Any, Literal, Sequence, Union
 
 
 if TYPE_CHECKING:
@@ -116,10 +116,10 @@ class Interval:
     The method `Interval.from_string` allows you to instead initialize from a variety of
     patterns:
     ```py
-    Interval.from_string("[-2, 6.1]")  # [-2, 6.1]
-    Interval.from_string("[ , 0]")     # [-inf, 0]
-    Interval.from_string("[0, ]")      # [0, +inf]
-    Interval.from_string("3 +- 2")     # (1, 5]
+    Interval.from_string("[-2, 6.1]")  # [-2.0, 6.1]
+    Interval.from_string("[ , 0]")     # [-inf, 0.0]
+    Interval.from_string("[0, ]")      # [0.0, +inf]
+    Interval.from_string("3 +- 2")     # [1.0, 5.0)
     """
 
     ####################################### INIT #######################################
@@ -264,6 +264,28 @@ class Interval:
         error = math.log2(abs(value) + 1) + 1
         plusminus = scale * error
         return cls(value - plusminus, value + plusminus)
+
+    def where(
+        self,
+        lower_bound: Number | None = None,
+        upper_bound: Number | None = None,
+        lower_closure: IntervalType | None = None,
+        upper_closure: IntervalType | None = None,
+    ) -> Interval:
+        if lower_bound is None:
+            lower_bound = self.lower_bound
+        if upper_bound is None:
+            upper_bound = self.upper_bound
+        if lower_closure is None:
+            lower_closure = self.lower_closure
+        if upper_closure is None:
+            upper_closure = self.upper_closure
+        return Interval(
+            lower_bound,
+            upper_bound,
+            lower_closure=lower_closure,
+            upper_closure=upper_closure,
+        )
 
     #################################### PROPERTIES ####################################
 
@@ -446,11 +468,9 @@ class Interval:
         Expands or contracts the interval depending whether the `amount` specified is a
         positive or negative number.
         """
-        return Interval(
-            self.lower_bound - amount,
-            self.upper_bound + amount,
-            lower_closure=self.lower_closure,
-            upper_closure=self.upper_closure,
+        return self.where(
+            lower_bound=self.lower_bound - amount,
+            upper_bound=self.upper_bound + amount,
         )
 
     def split(self, value: Number) -> tuple[Interval, Interval, Interval]:
@@ -459,33 +479,19 @@ class Interval:
                 _error_message("value", "within interval", f"{value} not in {self}")
             )
         return (
-            Interval(
-                self.lower_bound,
-                value,
-                lower_closure=self.lower_closure,
-                upper_closure=IntervalType.OPEN,
-            ),
+            self.where(upper_bound=value, upper_closure=IntervalType.OPEN),
             Interval(value, value),
-            Interval(
-                value,
-                self.upper_bound,
-                lower_closure=IntervalType.CLOSED,
-                upper_closure=self.upper_closure,
-            ),
+            self.where(lower_bound=value, lower_closure=IntervalType.CLOSED),
         )
 
     def closed(self) -> Interval:
-        return type(self)(
-            self.lower_bound,
-            self.upper_bound,
+        return self.where(
             lower_closure=IntervalType.CLOSED,
             upper_closure=IntervalType.CLOSED,
         )
 
     def opened(self) -> Interval:
-        return type(self)(
-            self.lower_bound,
-            self.upper_bound,
+        return self.where(
             lower_closure=IntervalType.OPEN,
             upper_closure=IntervalType.OPEN,
         )
@@ -661,19 +667,15 @@ class Interval:
         return self > other
 
     def __invert__(self) -> Interval:
-        return Interval(
-            self.lower_bound,
-            self.upper_bound,
+        return self.where(
             lower_closure=Interval._invert(self.lower_closure),
             upper_closure=Interval._invert(self.upper_closure),
         )
 
     def __neg__(self) -> Interval:
-        return Interval(
-            -self.lower_bound,
-            -self.upper_bound,
-            lower_closure=self.lower_closure,
-            upper_closure=self.upper_closure,
+        return self.where(
+            lower_bound=-self.lower_bound,
+            upper_bound=-self.upper_bound,
         )
 
     def __pos__(self) -> Interval:
@@ -707,11 +709,9 @@ class Interval:
 
     def __add__(self, other: Number | Interval) -> Interval:
         if isinstance(other, (float, int)):
-            return Interval(
-                self.lower_bound + other,
-                self.upper_bound + other,
-                lower_closure=self.lower_closure,
-                upper_closure=self.upper_closure,
+            return self.where(
+                lower_bound=self.lower_bound + other,
+                upper_bound=self.upper_bound + other,
             )
         if isinstance(other, Interval):
             return Interval._binary_fn(self, other, op.add)
@@ -721,11 +721,9 @@ class Interval:
 
     def __sub__(self, other: Number | Interval) -> Interval:
         if isinstance(other, (float, int)):
-            return Interval(
-                self.lower_bound - other,
-                self.upper_bound - other,
-                lower_closure=self.lower_closure,
-                upper_closure=self.upper_closure,
+            return self.where(
+                lower_bound=self.lower_bound - other,
+                upper_bound=self.upper_bound - other,
             )
         if isinstance(other, Interval):
             return Interval._binary_fn(self, other, op.sub)
@@ -735,11 +733,9 @@ class Interval:
 
     def __mul__(self, other: Number | Interval) -> Interval:
         if isinstance(other, (float, int)):
-            return Interval(
-                self.lower_bound * other,
-                self.upper_bound * other,
-                lower_closure=self.lower_closure,
-                upper_closure=self.upper_closure,
+            return self.where(
+                lower_bound=self.lower_bound * other,
+                upper_bound=self.upper_bound * other,
             )
         if isinstance(other, Interval):
             return Interval._binary_fn(self, other, op.mul)
@@ -749,42 +745,34 @@ class Interval:
 
     def __truediv__(self, other: Number | Interval) -> Interval:
         if isinstance(other, (float, int)):
-            return Interval(
-                self.lower_bound / other,
-                self.upper_bound / other,
-                lower_closure=self.lower_closure,
-                upper_closure=self.upper_closure,
+            return self.where(
+                lower_bound=self.lower_bound / other,
+                upper_bound=self.upper_bound / other,
             )
         if isinstance(other, Interval):
             return Interval._binary_fn(self, other, op.truediv)
         raise TypeError(Interval.__dunder_type_error(self, other))
 
     def __rtruediv__(self, value: Number) -> Interval:
-        return Interval(
-            Interval._x_div_0_is_inf(value, self.lower_bound, op.truediv),
-            Interval._x_div_0_is_inf(value, self.upper_bound, op.truediv),
-            lower_closure=self.lower_closure,
-            upper_closure=self.upper_closure,
+        return self.where(
+            lower_bound=Interval._x_div_0_is_inf(value, self.lower_bound, op.truediv),
+            upper_bound=Interval._x_div_0_is_inf(value, self.upper_bound, op.truediv),
         )
 
     def __floordiv__(self, other: Number | Interval) -> Interval:
         if isinstance(other, (float, int)):
-            return Interval(
-                self.lower_bound // other,
-                self.upper_bound // other,
-                lower_closure=self.lower_closure,
-                upper_closure=self.upper_closure,
+            return self.where(
+                lower_bound=self.lower_bound // other,
+                upper_bound=self.upper_bound // other,
             )
         if isinstance(other, Interval):
             return Interval._binary_fn(self, other, op.floordiv)
         raise TypeError(Interval.__dunder_type_error(self, other))
 
     def __rfloordiv__(self, value: Number) -> Interval:
-        return Interval(
-            Interval._x_div_0_is_inf(value, self.upper_bound, op.floordiv),
-            Interval._x_div_0_is_inf(value, self.lower_bound, op.floordiv),
-            lower_closure=self.lower_closure,
-            upper_closure=self.upper_closure,
+        return self.where(
+            lower_bound=Interval._x_div_0_is_inf(value, self.lower_bound, op.floordiv),
+            upper_bound=Interval._x_div_0_is_inf(value, self.upper_bound, op.floordiv),
         )
 
     def __pow__(self, exponent: Number) -> Interval:
@@ -799,11 +787,9 @@ class Interval:
                     f"input was {self} ** {exponent}",
                 )
             )
-        return Interval(
-            self.lower_bound**exponent,
-            self.upper_bound**exponent,
-            lower_closure=self.lower_closure,
-            upper_closure=self.upper_closure,
+        return self.where(
+            lower_bound=self.lower_bound**exponent,
+            upper_bound=self.upper_bound**exponent,
         )
 
     def __rmod__(self, value: Number) -> Number:
@@ -829,19 +815,9 @@ class Interval:
     def __or__(self, other: Number | Interval) -> Interval:
         if isinstance(other, (float, int)):
             if other == self.lower_bound:
-                return Interval(
-                    self.lower_bound,
-                    self.upper_bound,
-                    lower_closure=IntervalType.CLOSED,
-                    upper_closure=self.upper_closure,
-                )
+                return self.where(lower_closure=IntervalType.CLOSED)
             if other == self.upper_bound:
-                return Interval(
-                    self.lower_bound,
-                    self.upper_bound,
-                    lower_closure=self.lower_closure,
-                    upper_closure=IntervalType.CLOSED,
-                )
+                return self.where(upper_closure=IntervalType.CLOSED)
             if other in self:
                 return self
             raise ValueError(
@@ -870,19 +846,9 @@ class Interval:
 
     def __ror__(self, value: Number) -> Interval:
         if value == self.lower_bound:
-            return Interval(
-                self.lower_bound,
-                self.upper_bound,
-                lower_closure=IntervalType.CLOSED,
-                upper_closure=self.upper_closure,
-            )
+            return self.where(lower_closure=IntervalType.CLOSED)
         if value == self.upper_bound:
-            return Interval(
-                self.lower_bound,
-                self.upper_bound,
-                lower_closure=self.lower_closure,
-                upper_closure=IntervalType.CLOSED,
-            )
+            return self.where(upper_closure=IntervalType.CLOSED)
         if value in self:
             return self
         raise ValueError(
@@ -894,7 +860,7 @@ class Interval:
         )
 
     @staticmethod
-    def _round(x: Number, ndigits: int, direction: int) -> Number:
+    def _round(x: Number, ndigits: int, direction: Literal[-1, 1]) -> Number:
         """
         ### Description
         Rounds x down (floor) or up (ceil) if direction is +1 or -1 respectively. Errors
@@ -914,24 +880,24 @@ class Interval:
         ### Description
         Rounds the lower bound down and the upper bound up, to the provided ndigits.
 
-        Negative precision round to increasing powers of 10.
+        Negative precision rounds to increasing powers of 10.
         """
 
         # Make integers if ndigits is None or 0
         # (Must be None and not 0 because of the previous check)
         if not ndigits:
-            return Interval(
-                math.floor(self.lower_bound),
-                math.ceil(self.upper_bound),
-                lower_closure=self.lower_closure,
-                upper_closure=self.upper_closure,
+            return self.where(
+                lower_bound=math.floor(self.lower_bound),
+                upper_bound=math.ceil(self.upper_bound),
             )
 
-        return Interval(
-            Interval._round(self.lower_bound, ndigits=ndigits, direction=-1),
-            Interval._round(self.upper_bound, ndigits=ndigits, direction=+1),
-            lower_closure=self.lower_closure,
-            upper_closure=self.upper_closure,
+        return self.where(
+            lower_bound=Interval._round(
+                self.lower_bound, ndigits=ndigits, direction=-1
+            ),
+            upper_bound=Interval._round(
+                self.upper_bound, ndigits=ndigits, direction=+1
+            ),
         )
 
     def __floor__(self, ndigits: int = 0) -> Interval:
@@ -960,10 +926,10 @@ class Interval:
             return str(self.lower_bound).join("{}")
 
         # Normal
-        s, e = self.lower_bound, self.upper_bound
+        lower, upper = self.lower_bound, self.upper_bound
         l_bracket = "[" if self.lower_closure == IntervalType.CLOSED else "("
         r_bracket = "]" if self.upper_closure == IntervalType.CLOSED else ")"
-        return f"{l_bracket}{s}, {e}{r_bracket}"
+        return f"{l_bracket}{lower}, {upper}{r_bracket}"
 
     def __repr__(self) -> str:
         lo, hi = self.lower_bound, self.upper_bound
@@ -1010,7 +976,6 @@ def union(*intervals: Sequence[Interval]) -> Interval:
     left to right.
     """
     return reduce(lambda x, y: x | y, intervals, Interval())
-
 
 
 ######################################### OTHER ########################################
