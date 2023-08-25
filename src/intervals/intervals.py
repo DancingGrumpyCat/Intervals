@@ -4,14 +4,13 @@
 
 from __future__ import annotations
 
-import random
 import math
 import operator as op
+import random
 import warnings
-from functools import reduce
 from enum import Enum
+from functools import reduce
 from typing import TYPE_CHECKING, Any, Literal, Sequence, Union
-
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterator
@@ -895,9 +894,7 @@ class Interval:
             lower_bound=Interval._round(
                 self.lower_bound, ndigits=ndigits, direction=-1
             ),
-            upper_bound=Interval._round(
-                self.upper_bound, ndigits=ndigits, direction=+1
-            ),
+            upper_bound=Interval._round(self.upper_bound, ndigits=ndigits, direction=1),
         )
 
     def __floor__(self, ndigits: int = 0) -> Interval:
@@ -910,8 +907,8 @@ class Interval:
 
     def __ceil__(self, ndigits: int = 0) -> Interval:
         return Interval(
-            Interval._round(self.lower_bound, ndigits=ndigits, direction=+1),
-            Interval._round(self.upper_bound, ndigits=ndigits, direction=+1),
+            Interval._round(self.lower_bound, ndigits=ndigits, direction=1),
+            Interval._round(self.upper_bound, ndigits=ndigits, direction=1),
             lower_closure=IntervalType.OPEN,
             upper_closure=IntervalType.CLOSED,
         )
