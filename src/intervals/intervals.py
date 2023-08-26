@@ -20,17 +20,34 @@ if TYPE_CHECKING:
 ########################################################################################
 
 
-def _error_message(faulty_object: str, how_to_fix: str, reason: str) -> str:
-    """
-    ### Example:
-    "{number to union with interval} must be {adjacent to or within interval}
-    ({other} {not adjacent to or within} {self})"
-    """
-    return f"{faulty_object} must be {how_to_fix} ({reason})"
-
-
 Number = Union[int, float]
 """A type alias for the `float | int` union."""
+
+EPSILON: Number = 1e-15
+_INF: Number = float("inf")
+
+
+class IntervalError(Exception):
+    def __init__(
+        self, msg1: str, msg2: str | None = None, msg3: str | None = None, /
+    ) -> None:
+        """
+        ### Example:
+        "{number to union with interval} must be {adjacent to or within interval}
+        ({other} not adjacent to or within {self})"
+        """
+
+        if not (msg2 is None or msg3 is None):
+            super().__init__(f"{msg1} must be {msg2} ({msg3})")
+        super().__init__(msg1)
+
+
+class IntervalValueError(IntervalError):
+    pass
+
+
+class IntervalTypeError(IntervalError):
+    pass
 
 
 class IntervalType(Enum):
@@ -40,10 +57,6 @@ class IntervalType(Enum):
     """A single closed bound, or an interval where both bounds are closed."""
     HALF_OPEN = "half-open"
     """An interval where one bound is closed and the other is open, in either order."""
-
-
-EPSILON: Number = 1e-15
-_INF: Number = float("inf")
 
 
 ########################################################################################
@@ -189,12 +202,10 @@ class Interval:
                 )
             except ValueError:
                 # each bound must be either a float ... or an empty string
-                raise ValueError(
-                    _error_message(
-                        "each bound",
-                        "either a float as a string, or an empty string",
-                        f"input was '{original}'",
-                    )
+                raise IntervalValueError(
+                    "each bound",
+                    "either a float as a string, or an empty string",
+                    f"input was '{original}'",
                 ) from None
 
         # Plus/Minus form
@@ -212,13 +223,11 @@ class Interval:
             return Interval(center - plusminus, center + plusminus)
 
         # interval string must be a valid interval, matching ...
-        raise ValueError(
-            _error_message(
-                "interval string",
-                "a valid interval, matching either the plus minus form or bracket "
-                "notation",
-                f"input was '{original}'",
-            )
+        raise IntervalValueError(
+            "interval string",
+            "a valid interval, matching either the plus minus form or bracket "
+            "notation",
+            f"input was '{original}'",
         )
 
     @classmethod
@@ -248,8 +257,8 @@ class Interval:
         """
         if not (isinstance(j, int) and isinstance(n, int)):
             # both j and n must be integers
-            raise TypeError(
-                _error_message("both j and n", "integers", f"j was {j} and n was {n}")
+            raise IntervalTypeError(
+                ("both j and n", "integers", f"j was {j} and n was {n}")
             )
         return cls(
             j / p**n,
@@ -360,26 +369,24 @@ class Interval:
         original_start: float | None = start
         if step == 0:
             # step must be nonzero
-            raise ValueError(_error_message("step", "nonzero", f"was {step}"))
+            raise IntervalValueError("step", "nonzero", f"was {step}")
         if abs(step) == _INF:
             # step must be finite
-            raise ValueError(_error_message("step", "finite", f"was {step}"))
+            raise IntervalValueError("step", "finite", f"was {step}")
 
         if not (self.lower_bound_is_finite or start is not None):
             start = self.upper_bound
 
         if not (self.lower_bound_is_finite or self.upper_bound_is_finite):
             # at least one bound must be finite
-            raise ValueError(
-                _error_message("at least one bound", "finite", f"interval was {self}")
+            raise IntervalValueError(
+                "at least one bound", "finite", f"interval was {self}"
             )
 
         if not (self.lower_bound_is_finite or step <= 0):
             # step must be negative if the lower bound is infinite
-            raise ValueError(
-                _error_message(
-                    "step", "negative if the lower bound is infinite", f"was {step}"
-                )
+            raise IntervalValueError(
+                "step", "negative if the lower bound is infinite", f"was {step}"
             )
 
         if start is None:
@@ -389,13 +396,11 @@ class Interval:
             start += step
             if start not in self:
                 # start must be one or fewer steps away from interval
-                raise ValueError(
-                    _error_message(
-                        "start",
-                        "one or fewer steps away from interval",
-                        f"interval was {self}, step was {step},"
-                        f"and start was {original_start}",
-                    )
+                raise IntervalValueError(
+                    "start",
+                    "one or fewer steps away from interval",
+                    f"interval was {self}, step was {step},"
+                    f"and start was {original_start}",
                 )
         counter = 1
         current: Number = start
@@ -413,18 +418,14 @@ class Interval:
         The interval must have finite diameter.
         """
         if self.width == _INF:
-            raise ValueError(
-                _error_message(
-                    "interval to subdivide",
-                    "finite",
-                    f"width of {self} is {self.width}",
-                )
+            raise IntervalValueError(
+                "interval to subdivide",
+                "finite",
+                f"width of {self} is {self.width}",
             )
         if subdivisions < 1:
-            raise ValueError(
-                _error_message(
-                    "number of subdivisions", "1 or greater", f"was {subdivisions}"
-                )
+            raise IntervalValueError(
+                "number of subdivisions", "1 or greater", f"was {subdivisions}"
             )
         subdivision_width = self.width / subdivisions
         counter = 1
@@ -474,8 +475,8 @@ class Interval:
 
     def split(self, value: Number) -> tuple[Interval, Interval, Interval]:
         if value not in self:
-            raise ValueError(
-                _error_message("value", "within interval", f"{value} not in {self}")
+            raise IntervalValueError(
+                "value", "within interval", f"{value} not in {self}"
             )
         return (
             self.where(upper_bound=value, upper_closure=IntervalType.OPEN),
@@ -532,12 +533,10 @@ class Interval:
         sign = +1
         if self.lower_bound == -_INF:
             if self.upper_bound == _INF:
-                raise ValueError(
-                    _error_message(
-                        "interval to iterate in",
-                        "bounded in at least one direction",
-                        f"was {self}",
-                    )
+                raise IntervalValueError(
+                    "interval to iterate in",
+                    "bounded in at least one direction",
+                    f"was {self}",
                 )
             sign = -1
         yield from self.step(sign)
@@ -700,7 +699,7 @@ class Interval:
 
     @staticmethod
     def __dunder_type_error(p1: Any, p2: Any) -> str:
-        return _error_message(
+        raise IntervalValueError(
             "input",
             "Interval and Number, or Interval and Interval",
             f"was {p1} ({type(p1).__name__}) + {p2} ({type(p2).__name__})",
@@ -712,9 +711,12 @@ class Interval:
                 lower_bound=self.lower_bound + other,
                 upper_bound=self.upper_bound + other,
             )
+
         if isinstance(other, Interval):
             return Interval._binary_fn(self, other, op.add)
-        raise TypeError(Interval.__dunder_type_error(self, other))
+
+        Interval.__dunder_type_error(self, other)
+        return None
 
     __radd__ = __add__
 
@@ -724,9 +726,12 @@ class Interval:
                 lower_bound=self.lower_bound - other,
                 upper_bound=self.upper_bound - other,
             )
+
         if isinstance(other, Interval):
             return Interval._binary_fn(self, other, op.sub)
-        raise TypeError(Interval.__dunder_type_error(self, other))
+
+        Interval.__dunder_type_error(self, other)
+        return None
 
     __rsub__ = __sub__
 
@@ -736,9 +741,12 @@ class Interval:
                 lower_bound=self.lower_bound * other,
                 upper_bound=self.upper_bound * other,
             )
+
         if isinstance(other, Interval):
             return Interval._binary_fn(self, other, op.mul)
-        raise TypeError(Interval.__dunder_type_error(self, other))
+
+        Interval.__dunder_type_error(self, other)
+        return None
 
     __rmul__ = __mul__
 
@@ -748,9 +756,12 @@ class Interval:
                 lower_bound=self.lower_bound / other,
                 upper_bound=self.upper_bound / other,
             )
+
         if isinstance(other, Interval):
             return Interval._binary_fn(self, other, op.truediv)
-        raise TypeError(Interval.__dunder_type_error(self, other))
+
+        Interval.__dunder_type_error(self, other)
+        return None
 
     def __rtruediv__(self, value: Number) -> Interval:
         return self.where(
@@ -764,9 +775,12 @@ class Interval:
                 lower_bound=self.lower_bound // other,
                 upper_bound=self.upper_bound // other,
             )
+
         if isinstance(other, Interval):
             return Interval._binary_fn(self, other, op.floordiv)
-        raise TypeError(Interval.__dunder_type_error(self, other))
+
+        Interval.__dunder_type_error(self, other)
+        return None
 
     def __rfloordiv__(self, value: Number) -> Interval:
         return self.where(
@@ -779,12 +793,10 @@ class Interval:
             isinstance(exponent, int)
             or (self.lower_bound >= 0 and self.upper_bound >= 0)
         ):
-            raise TypeError(
-                _error_message(
-                    "exponent",
-                    "an integer if either bound is negative",
-                    f"input was {self} ** {exponent}",
-                )
+            raise IntervalTypeError(
+                "exponent",
+                "an integer if either bound is negative",
+                f"input was {self} ** {exponent}",
             )
         return self.where(
             lower_bound=self.lower_bound**exponent,
@@ -793,8 +805,8 @@ class Interval:
 
     def __rmod__(self, value: Number) -> Number:
         if not isinstance(value, (float, int)):
-            raise TypeError(
-                _error_message(
+            raise IntervalTypeError(
+                (
                     "value",
                     "of type `Number` (int | float)",
                     f"was {value} ({type(value).__name__})",
@@ -812,35 +824,34 @@ class Interval:
 
     # union
     def __or__(self, other: Number | Interval) -> Interval:
+        # if other is a Number ...
         if isinstance(other, (float, int)):
-            if other == self.lower_bound:
-                return self.where(lower_closure=IntervalType.CLOSED)
-            if other == self.upper_bound:
-                return self.where(upper_closure=IntervalType.CLOSED)
-            if other in self:
+            # ... and also within the interval, just return the number
+            if other in self.closed():
                 return self
-            raise ValueError(
-                _error_message(
-                    "value",
-                    "adjacent to or within interval",
-                    f"{other} neither adjacent to nor within {self}",
-                )
+            # ... but not within the interval, raise a ValueError
+            raise IntervalValueError(
+                "value",
+                "adjacent to or within interval",
+                f"{other} neither adjacent to nor within {self}",
             )
+
+        # other is Interval
         if not (self.intersects(other) or self.is_adjacent(other)):
-            raise ValueError(
+            raise IntervalValueError(
                 "intervals must intersect or be adjacent to create a union"
             )
-        min_lower_bounded: Interval = (
-            self if self.lower_bound < other.lower_bound else other
-        )
-        max_upper_bounded: Interval = (
-            self if self.upper_bound > other.upper_bound else other
-        )
         return Interval(
             min(self.lower_bound, other.lower_bound),
             max(self.upper_bound, other.upper_bound),
-            lower_closure=min_lower_bounded.lower_closure,
-            upper_closure=max_upper_bounded.upper_closure,
+            # lower closure of the interval with the lower lower bound, and
+            # upper closure of the interval with the higher upper bound
+            lower_closure=(
+                self if self.lower_bound < other.lower_bound else other
+            ).lower_closure,
+            upper_closure=(
+                self if self.upper_bound > other.upper_bound else other
+            ).upper_closure,
         )
 
     def __ror__(self, value: Number) -> Interval:
@@ -850,12 +861,10 @@ class Interval:
             return self.where(upper_closure=IntervalType.CLOSED)
         if value in self:
             return self
-        raise ValueError(
-            _error_message(
-                "value",
-                "adjacent to or within interval",
-                f"{value} neither adjacent to nor within {self}",
-            )
+        raise IntervalValueError(
+            "value",
+            "adjacent to or within interval",
+            f"{value} neither adjacent to nor within {self}",
         )
 
     @staticmethod
@@ -868,8 +877,8 @@ class Interval:
         if float(x).is_integer():
             return x
         if abs(direction) != 1:
-            raise ValueError(
-                _error_message("direction", "up (+1) or down (-1)", f"was {direction}")
+            raise IntervalValueError(
+                "direction", "up (+1) or down (-1)", f"was {direction}"
             )
         out = round(x + direction * (0.5 * 10**-ndigits), ndigits)
         return float(out) if ndigits > 0 else int(out)
@@ -966,13 +975,13 @@ PI = Interval.from_string(f"({223 / 71}, {22 / 7})")
 ###################################### REDUCTIONS ######################################
 
 
-def union(*intervals: Sequence[Interval]) -> Interval:
+def union(intervals: Sequence[Interval]) -> Interval:
     """
     Returns the union-reduction of a sequence of intervals; that is, it starts with the
     degenerate interval {0}, and progressively unions each interval in the sequence from
     left to right.
     """
-    return reduce(lambda x, y: x | y, intervals, Interval())
+    return reduce(lambda x, y: x | y, intervals)
 
 
 ######################################### OTHER ########################################
@@ -985,9 +994,7 @@ def rand_uniform(interval: Interval, *, values: int = 1) -> list[float]:
     if abs(interval.adjusted_lower_bound) == float("inf") or abs(
         interval.upper_bound
     ) == float("inf"):
-        raise ValueError(
-            _error_message("bounds of interval", "finite", f"was {interval})")
-        )
+        raise IntervalValueError("bounds of interval", "finite", f"was {interval})")
 
     def f(i: Interval) -> float:
         return random.random() * i.width + i.lower_bound
@@ -1023,9 +1030,7 @@ def clamp(value: Number, interval: Interval) -> Number:
     """
     if interval.width == 0:
         if interval.lower_closure == interval.upper_closure == IntervalType.OPEN:
-            raise ValueError(
-                _error_message("interval", "not the empty set", f"was {interval}")
-            )
+            raise IntervalValueError("interval", "not the empty set", f"was {interval}")
         return interval.lower_bound
     return min(interval.upper_bound, max(interval.lower_bound, value))
 

@@ -1,6 +1,9 @@
 import pytest
 from intervals import (
     Interval,
+    IntervalError,
+    IntervalTypeError,
+    IntervalValueError,
     IntervalType,
     EMPTY_SET,
     UNIT,
@@ -199,5 +202,5 @@ def test_as_plus_minus() -> None:
 
 # step can't be the identity element
 def test_step_zero_fail() -> None:
-    with pytest.raises(ValueError):
+    with pytest.raises(IntervalValueError):
         print(list(x.step(0)))
