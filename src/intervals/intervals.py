@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import fractions
 import math
 import operator as op
 import random
@@ -20,8 +21,8 @@ if TYPE_CHECKING:
 ########################################################################################
 
 
-Number = Union[int, float]
-"""A type alias for the `float | int` union."""
+Number = Union[int, float, fractions.Fraction]
+"""A type alias for the `float | int | Fraction` union."""
 
 EPSILON: Number = 1e-15
 _INF: Number = float("inf")
@@ -39,7 +40,8 @@ class IntervalError(Exception):
 
         if not (msg2 is None or msg3 is None):
             super().__init__(f"{msg1} must be {msg2} ({msg3})")
-        super().__init__(msg1)
+        else:
+            super().__init__(msg1)
 
 
 class IntervalValueError(IntervalError):
@@ -123,7 +125,7 @@ class Interval:
     Interval(x, y)  # [x, y)
     ```
 
-    If `x` > `y`, `y` is swapped with `x`.
+    If `x > y`, `y` is swapped with `x`.
 
     The method `Interval.from_string` allows you to instead initialize from a variety of
     patterns:
@@ -132,6 +134,10 @@ class Interval:
     Interval.from_string("[ , 0]")     # [-inf, 0.0]
     Interval.from_string("[0, ]")      # [0.0, +inf]
     Interval.from_string("3 +- 2")     # [1.0, 5.0)
+    ```
+
+    ### Types
+    The arguments with type Number can be integers, floats, or fractions.
     """
 
     ####################################### INIT #######################################
@@ -167,6 +173,8 @@ class Interval:
         self.adjusted_lower_bound = bounds.adjusted_lower_bound
         self.adjusted_upper_bound = bounds.adjusted_upper_bound
 
+        self.datatypes = (type(self.lower_bound), type(self.upper_bound))
+
     @classmethod
     def from_string(cls, interval_string: str, /) -> Interval:
         original = interval_string
@@ -189,7 +197,9 @@ class Interval:
                 else IntervalType.CLOSED
             )
             # convert to canonical form
-            interval_string = interval_string.strip("[()]").replace("..", ",")
+            interval_string = (
+                interval_string.strip("[()]").replace("...", ",").replace("..", ",")
+            )
             (lower_bound, upper_bound) = interval_string.split(",")
 
             try:
@@ -222,7 +232,7 @@ class Interval:
             center, plusminus = map(float, interval_string.split("pm"))
             return Interval(center - plusminus, center + plusminus)
 
-        # interval string must be a valid interval, matching ...
+        # interval string must be a valid interval, matching ...(input was ...)
         raise IntervalValueError(
             "interval string",
             "a valid interval, matching either the plus minus form or bracket "
@@ -247,19 +257,22 @@ class Interval:
         to be structured as a sort of infinite n-ary tree. See
         [Wikipedia: Dyadic Intervals](https://en.wikipedia.org/wiki/Interval_(mathematics)#Dyadic_intervals)
         for the source of this and for more information.
-        `p` should be prime, but since this is a slow test it is not enforced.
+
+        Useful for quad-trees.
+
+        #### Constraints:
+        - `p` should be prime, but since this is a slow test it is not enforced
+        - `j` and `n` should be constrained to integers, but for the sake of flexibility
+        this is also not enforced
+
         ### Properties
+        If both constraints are followed:
         - width is always an integer power of `p`
         - contained in exactly one p-adic interval of `p` times its length
         - spanned by exactly `p` p-adic intervals of its length over `p`
         - if two open dyadic (`p == 2`) intervals intersect, then one is a subset of
         the other
         """
-        if not (isinstance(j, int) and isinstance(n, int)):
-            # both j and n must be integers
-            raise IntervalTypeError(
-                ("both j and n", "integers", f"j was {j} and n was {n}")
-            )
         return cls(
             j / p**n,
             (j + 1) / p**n,
@@ -600,7 +613,7 @@ class Interval:
     # --------------------------------------|
 
     @staticmethod
-    def _triangle_area(x: float) -> float:
+    def _triangle_area(x: Number) -> float:
         """
         Area of a right isosceles triangle with base and height x, or 0 if area would be
         less than zero.
@@ -640,13 +653,13 @@ class Interval:
             return out
         return bool(out)
 
-    def __gt__(self, other: object) -> bool | float:
-        out = 1.0 - (self < other)
+    def __gt__(self, other: object) -> bool | Number:
+        out = 1 - (self < other)
         if 0 < out < 1:
             return out
         return bool(out)
 
-    def __le__(self, other: object) -> bool | float:
+    def __le__(self, other: object) -> bool | Number:
         warnings.warn(
             "A <= B is the same as A < B between intervals and intervals, and between "
             "intervals and numbers. Use < instead.",
@@ -655,7 +668,7 @@ class Interval:
         )
         return self < other
 
-    def __ge__(self, other: object) -> bool | float:
+    def __ge__(self, other: object) -> bool | Number:
         warnings.warn(
             "A >= B is the same as A > B between intervals and intervals, and between "
             "intervals and numbers. Use > instead.",
@@ -954,16 +967,11 @@ class Interval:
 ########################################################################################
 
 
-EMPTY_SET: Interval = Interval(
-    0,
-    0,
-    lower_closure=IntervalType.OPEN,
-    upper_closure=IntervalType.OPEN,
-)
+EMPTY_SET: Interval = Interval(0).opened()
 UNIT = Interval(1)
-UNIT_DISK = ~(UNIT | -UNIT)
+UNIT_DISK = (-UNIT | UNIT).closed()
 POSITIVE_REALS = Interval(float("inf")).closed()
-NATURALS: Iterator[int] = (int(x) for x in POSITIVE_REALS.step(1))
+NATURALS: Iterator[int] = (int(x) for x in (POSITIVE_REALS).step(1))
 WHOLE_NUMBERS: Iterator[int] = (int(x) for x in (POSITIVE_REALS + 1).step(1))
 PI = Interval.from_string(f"({223 / 71}, {22 / 7})")
 
@@ -996,10 +1004,10 @@ def rand_uniform(interval: Interval, *, values: int = 1) -> list[float]:
     ) == float("inf"):
         raise IntervalValueError("bounds of interval", "finite", f"was {interval})")
 
-    def f(i: Interval) -> float:
-        return random.random() * i.width + i.lower_bound
+    def _random(interval: Interval) -> float:
+        return random.random() * interval.width + interval.lower_bound
 
-    return [f(interval) for _ in range(values)]
+    return [_random(interval) for _ in range(values)]
 
 
 def rand_interval(

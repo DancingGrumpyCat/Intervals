@@ -64,6 +64,7 @@ Interval.from_string("2 +/- 1.2")
 Interval.from_string("2 ± 1.2")
 Interval.from_string("2 pm 1.2")
 Interval.from_string("2 p/m 1.2")
+Interval(0.8, 3.2)
 ```
 
 ## How it can replace `range`
