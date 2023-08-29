@@ -11,7 +11,7 @@ import random
 import warnings
 from enum import Enum
 from functools import reduce
-from typing import TYPE_CHECKING, Any, Literal, Sequence, Union
+from typing import TYPE_CHECKING, Any, Literal, Sequence, Union, get_args
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterator
@@ -24,8 +24,8 @@ if TYPE_CHECKING:
 Number = Union[int, float, fractions.Fraction]
 """A type alias for the `float | int | Fraction` union."""
 
-EPSILON: Number = 1e-15
-_INF: Number = float("inf")
+EPSILON: float = 1e-15
+_INF: float = float("inf")
 
 
 class IntervalError(Exception):
@@ -281,9 +281,9 @@ class Interval:
         )
 
     @classmethod
-    def approximate(cls, value: Number, scale: float = 1.0) -> Interval:
-        error = math.log2(abs(value) + 1) + 1
-        plusminus = scale * error
+    def approximate(cls, value: float | int, scale: float = 1.0) -> Interval:
+        error_bars = math.log2(abs(value) + 1) + 1
+        plusminus = scale * error_bars
         return cls(value - plusminus, value + plusminus)
 
     def where(
@@ -327,7 +327,7 @@ class Interval:
         return self.upper_bound != +_INF
 
     @property
-    def width(self) -> float:
+    def width(self) -> Number:
         """
         ### Description
         The positive difference between the apparent lower and upper bounds.
@@ -343,7 +343,7 @@ class Interval:
         return IntervalType.HALF_OPEN
 
     @property
-    def midpoint(self) -> float:
+    def midpoint(self) -> Number:
         """
         ### Description
         Returns the arithmetic average of the two bounds, treating each as closed.
@@ -365,7 +365,7 @@ class Interval:
             f"{round(self.upper_bound - self.midpoint, precision)}"
         )
 
-    def step(self, step: float, /, *, start: float | None = None) -> Iterator[float]:
+    def step(self, step: Number, /, *, start: Number | None = None) -> Iterator[Number]:
         """
         ### Description
         Returns an iterator that yields values starting from `start` or the lower bound,
@@ -379,7 +379,7 @@ class Interval:
         the upper bound is also infinite, a ValueError is raised.
         """
 
-        original_start: float | None = start
+        original_start: Number | None = start
         if step == 0:
             # step must be nonzero
             raise IntervalValueError("step", "nonzero", f"was {step}")
@@ -613,23 +613,23 @@ class Interval:
     # --------------------------------------|
 
     @staticmethod
-    def _triangle_area(x: Number) -> float:
+    def _triangle_area(x: Number) -> Number:
         """
         Area of a right isosceles triangle with base and height x, or 0 if area would be
         less than zero.
         """
         return x**2 / 2 if x > 0 else 0
 
-    def __lt__(self, other: object) -> bool | float:
+    def __lt__(self, other: object) -> bool | Number:
         if not isinstance(other, (Interval, float, int)):
             return NotImplemented
 
-        def _lt_helper(interval: Interval, value: Number) -> bool | float:
+        def _lt_helper(interval: Interval, value: Number) -> bool | Number:
             if value in interval:
                 return invlerp(interval, value)
             return value >= interval.lower_bound
 
-        out: bool | float
+        out: bool | Number
         if self.width == 0:
             if not isinstance(other, Interval):
                 return NotImplemented
@@ -711,8 +711,8 @@ class Interval:
         )
 
     @staticmethod
-    def __dunder_type_error(p1: Any, p2: Any) -> str:
-        raise IntervalValueError(
+    def _fmt_dunder_type_error(p1: Any, p2: Any) -> tuple[str, str, str]:
+        return (
             "input",
             "Interval and Number, or Interval and Interval",
             f"was {p1} ({type(p1).__name__}) + {p2} ({type(p2).__name__})",
@@ -728,8 +728,7 @@ class Interval:
         if isinstance(other, Interval):
             return Interval._binary_fn(self, other, op.add)
 
-        Interval.__dunder_type_error(self, other)
-        return None
+        raise IntervalTypeError(*Interval._fmt_dunder_type_error(self, other))
 
     __radd__ = __add__
 
@@ -743,8 +742,7 @@ class Interval:
         if isinstance(other, Interval):
             return Interval._binary_fn(self, other, op.sub)
 
-        Interval.__dunder_type_error(self, other)
-        return None
+        raise IntervalTypeError(*Interval._fmt_dunder_type_error(self, other))
 
     __rsub__ = __sub__
 
@@ -758,8 +756,7 @@ class Interval:
         if isinstance(other, Interval):
             return Interval._binary_fn(self, other, op.mul)
 
-        Interval.__dunder_type_error(self, other)
-        return None
+        raise IntervalTypeError(*Interval._fmt_dunder_type_error(self, other))
 
     __rmul__ = __mul__
 
@@ -773,8 +770,7 @@ class Interval:
         if isinstance(other, Interval):
             return Interval._binary_fn(self, other, op.truediv)
 
-        Interval.__dunder_type_error(self, other)
-        return None
+        raise IntervalTypeError(*Interval._fmt_dunder_type_error(self, other))
 
     def __rtruediv__(self, value: Number) -> Interval:
         return self.where(
@@ -792,8 +788,7 @@ class Interval:
         if isinstance(other, Interval):
             return Interval._binary_fn(self, other, op.floordiv)
 
-        Interval.__dunder_type_error(self, other)
-        return None
+        raise IntervalTypeError(*Interval._fmt_dunder_type_error(self, other))
 
     def __rfloordiv__(self, value: Number) -> Interval:
         return self.where(
@@ -819,11 +814,9 @@ class Interval:
     def __rmod__(self, value: Number) -> Number:
         if not isinstance(value, (float, int)):
             raise IntervalTypeError(
-                (
-                    "value",
-                    "of type `Number` (int | float)",
-                    f"was {value} ({type(value).__name__})",
-                )
+                "value",
+                "of type `Number` (int | float)",
+                f"was {value} ({type(value).__name__})",
             )
         return value % self.width + self.lower_bound
 
@@ -837,8 +830,11 @@ class Interval:
 
     # union
     def __or__(self, other: Number | Interval) -> Interval:
+        if not isinstance(other, (*get_args(Number), Interval)):
+            return NotImplemented
+
         # if other is a Number ...
-        if isinstance(other, (float, int)):
+        if isinstance(other, get_args(Number)):
             # ... and also within the interval, just return the number
             if other in self.closed():
                 return self
