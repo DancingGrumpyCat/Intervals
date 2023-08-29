@@ -11,7 +11,7 @@ import random
 import warnings
 from enum import Enum
 from functools import reduce
-from typing import TYPE_CHECKING, Any, Literal, Sequence, Union, cast, get_args
+from typing import TYPE_CHECKING, Any, Literal, Sequence, Union, get_args
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterator
@@ -832,9 +832,6 @@ class Interval:
     def __or__(self, other: Number | Interval) -> Interval:
         if not isinstance(other, (*get_args(Number), Interval)):
             return NotImplemented
-
-        # without this, mypy gets confused about get_args
-        other = cast("Interval | Number", other)  # type: ignore[redundant-cast]
 
         # if other is Interval
         if isinstance(other, Interval):
