@@ -11,7 +11,7 @@ import random
 import warnings
 from enum import Enum
 from functools import reduce
-from typing import TYPE_CHECKING, Any, Literal, Sequence, Union, get_args
+from typing import TYPE_CHECKING, Any, Literal, Sequence, Union, cast, get_args
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterator
@@ -833,34 +833,36 @@ class Interval:
         if not isinstance(other, (*get_args(Number), Interval)):
             return NotImplemented
 
-        # if other is a Number ...
-        if isinstance(other, get_args(Number)):
-            # ... and also within the interval, just return the number
-            if other in self.closed():
-                return self
-            # ... but not within the interval, raise a ValueError
-            raise IntervalValueError(
-                "value",
-                "adjacent to or within interval",
-                f"{other} neither adjacent to nor within {self}",
+        # without this, mypy gets confused about get_args
+        other = cast("Interval | Number", other)  # type: ignore[redundant-cast]
+
+        # if other is Interval
+        if isinstance(other, Interval):
+            if not (self.intersects(other) or self.is_adjacent(other)):
+                raise IntervalValueError(
+                    "intervals must intersect or be adjacent to create a union"
+                )
+            return Interval(
+                min(self.lower_bound, other.lower_bound),
+                max(self.upper_bound, other.upper_bound),
+                # lower closure of the interval with the lower lower bound, and
+                # upper closure of the interval with the higher upper bound
+                lower_closure=(
+                    self if self.lower_bound < other.lower_bound else other
+                ).lower_closure,
+                upper_closure=(
+                    self if self.upper_bound > other.upper_bound else other
+                ).upper_closure,
             )
 
-        # other is Interval
-        if not (self.intersects(other) or self.is_adjacent(other)):
-            raise IntervalValueError(
-                "intervals must intersect or be adjacent to create a union"
-            )
-        return Interval(
-            min(self.lower_bound, other.lower_bound),
-            max(self.upper_bound, other.upper_bound),
-            # lower closure of the interval with the lower lower bound, and
-            # upper closure of the interval with the higher upper bound
-            lower_closure=(
-                self if self.lower_bound < other.lower_bound else other
-            ).lower_closure,
-            upper_closure=(
-                self if self.upper_bound > other.upper_bound else other
-            ).upper_closure,
+        # if other is a Number, and also within the interval, just return the number
+        if other in self.closed():
+            return self
+        # if other is a Number, but not within the interval, raise a ValueError
+        raise IntervalValueError(
+            "value",
+            "adjacent to or within interval",
+            f"{other} neither adjacent to nor within {self}",
         )
 
     def __ror__(self, value: Number) -> Interval:
