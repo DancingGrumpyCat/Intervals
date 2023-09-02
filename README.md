@@ -11,16 +11,16 @@ Many methods and examples herein are taken from
 
 ```pycon
 >>> # INITIALIZATION
->>> interval_1 = Interval.from_string("[0, 5)")  # [0, 5)
+>>> interval_1 = Interval.from_string("[0, 5)")  # [0.0, 5.0)
 >>> interval_2 = Interval(3, 6)  # [3, 6)
 
 >>> # METHODS & PROPERTIES
 >>> print(interval_1)
-[0, 5)
+[0.0, 5.0)
 >>> list(interval_1.step(2))
 [0, 2, 4]
 >>> list(interval_1.step(2, start=-1))
-[1, 3, 5]
+[1, 3]
 >>> list(interval_1.step(-1, start=5))  # does not include 5 because upper_bound is open
 [4, 3, 2, 1, 0]
 >>> interval_1.interval_type
