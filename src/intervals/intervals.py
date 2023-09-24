@@ -60,6 +60,21 @@ class IntervalType(Enum):
     HALF_OPEN = "half-open"
     """An interval where one bound is closed and the other is open, in either order."""
 
+    def __invert__(self) -> IntervalType:
+
+        if self == IntervalType.HALF_OPEN:
+            raise ValueError(
+                "IntervalType.__invert__ should be used for single bounds only."
+            )
+        if self == IntervalType.CLOSED:
+            return IntervalType.OPEN
+        return IntervalType.CLOSED
+
+
+
+    def __str__(self) -> str:
+        return self.name
+
 
 ########################################################################################
 #                                  BOUNDS HELPER CLASS                                 #
@@ -512,12 +527,6 @@ class Interval:
     # -------------------------------- HELPER METHODS -------------------------------- #
 
     @staticmethod
-    def _invert(it: IntervalType) -> IntervalType:
-        if it == IntervalType.CLOSED:
-            return IntervalType.OPEN
-        return IntervalType.CLOSED
-
-    @staticmethod
     def _x_div_0_is_inf(
         x: Number, y: Number, fn: Callable[[Number, Number], Number]
     ) -> Number:
@@ -679,8 +688,8 @@ class Interval:
 
     def __invert__(self) -> Interval:
         return self.where(
-            lower_closure=Interval._invert(self.lower_closure),
-            upper_closure=Interval._invert(self.upper_closure),
+            lower_closure=~self.lower_closure,
+            upper_closure=~self.upper_closure,
         )
 
     def __neg__(self) -> Interval:
